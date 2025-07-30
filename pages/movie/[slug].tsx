@@ -380,42 +380,32 @@ const Slug = () => {
                     Choose your preferred streaming quality
                   </p>
                 </div>
-
-                {/* Selected Quality Display */}
-                <div className="mb-4 p-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl text-white shadow-lg">
-                  <div className="font-bold text-sm">Selected Quality</div>
-                  <div className="text-lg font-bold mt-1">
-                    {movieData.quality[selectedQualityIndex].type}
-                  </div>
-                  <div className="text-sm opacity-90 mt-1 grid grid-cols-2 gap-2 text-left">
-                    <span>Size: {movieData.quality[selectedQualityIndex].size}</span>
-                    <span>Audio: {movieData.quality[selectedQualityIndex].audio}</span>
-                    {movieData.quality[selectedQualityIndex].subtitle && (
-                      <span>Sub: {movieData.quality[selectedQualityIndex].subtitle}</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Quality Options */}
-                <div className="space-y-3 max-h-40 overflow-y-auto hide-scrollbar">
+                <div className="space-y-3 max-h-60 overflow-y-auto hide-scrollbar">
                   {movieData.quality.map((quality, index) => (
                     <motion.button
                       key={index}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => setSelectedQualityIndex(index)}
+                      onClick={() => handleQualitySelect(index)}
                       className={`
                         w-full p-4 rounded-xl text-left transition-all duration-200 relative
                         ${
                           index === selectedQualityIndex
-                            ? "bg-white/20 ring-2 ring-purple-400"
-                            : "bg-white/10 hover:bg-white/15"
+                            ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/25"
+                            : "bg-white/10 text-white hover:bg-white/20"
                         }
                       `}
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <div className="font-bold text-sm">{quality.type}</div>
+                          <div className="font-bold text-sm flex items-center gap-2">
+                            {quality.type}
+                            {index === selectedQualityIndex && (
+                              <span className="bg-white/20 text-xs px-2 py-0.5 rounded-full">
+                                Selected
+                              </span>
+                            )}
+                          </div>
                           <div className="text-xs opacity-80 mt-1 flex flex-col">
                             <span>{quality.size}</span>
                             <span>{quality.audio}</span>
@@ -427,10 +417,10 @@ const Slug = () => {
                           </div>
                         </div>
                         {index === selectedQualityIndex && (
-                          <div className="flex items-center justify-center w-6 h-6 bg-white/20 rounded-full">
+                          <div className="flex items-center justify-center w-8 h-8 bg-white/20 rounded-full">
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
-                              className="h-4 w-4"
+                              className="h-5 w-5"
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
@@ -448,8 +438,6 @@ const Slug = () => {
                     </motion.button>
                   ))}
                 </div>
-
-                {/* Action Buttons */}
                 <div className="flex space-x-3 mt-6">
                   <button
                     onClick={handleCloseModal}
