@@ -67,6 +67,7 @@ const Slug = () => {
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const [showQualityModal, setShowQualityModal] = useState(false);
   const [selectedQualityIndex, setSelectedQualityIndex] = useState(0);
+
   const { streamUrl } = useStreamToken({
     contentId: movieData?.id || 0,
     mediaType: "movie",
@@ -99,7 +100,7 @@ const Slug = () => {
     setShowQualityModal(true);
   };
 
-  const handleQualitySelect = (index: number) => {
+  const handleQualitySelect = (index) => {
     setSelectedQualityIndex(index);
     setShowQualityModal(false);
     setShowVideoPlayer(true);
@@ -239,6 +240,7 @@ const Slug = () => {
           }
         />
       </Head>
+
       {/* Background Image */}
       <div className="fixed top-0 left-0 w-full h-screen z-0">
         <Image
@@ -256,12 +258,14 @@ const Slug = () => {
         />
         <div className="absolute inset-0 bg-black/90"></div>
       </div>
+
       {/* Page content */}
       <div className={styles.container}>
         {/* Back button */}
         <div className="py-6 max-w-6xl mx-auto ">
           <Backward />
         </div>
+
         {/* All content */}
         <div className={styles.innerContainer}>
           <ContentSection>
@@ -313,9 +317,11 @@ const Slug = () => {
               streamUrl={streamUrl ?? undefined}
             />
           </ContentSection>
+
           <ContentSection title="Cast & Crew">
             <CastCrew castMembers={movieData.cast} />
           </ContentSection>
+
           <ContentSection title="About">
             <AboutCard
               genres={movieData.genres || []}
@@ -328,6 +334,7 @@ const Slug = () => {
               }
             />
           </ContentSection>
+
           <ContentSection title="Similar Titles">
             <Similar mediaType="movie" genres={movieData.genres || []} />
           </ContentSection>
@@ -337,92 +344,110 @@ const Slug = () => {
       {/* Quality Selection Modal */}
       <AnimatePresence>
         {showQualityModal && movieData && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            onClick={handleCloseModal}
-          >
-            <div
-              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-              onClick={handleCloseModal}
-            ></div>
+          <>
+            <style jsx>{`
+              .hide-scrollbar {
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+              }
+              .hide-scrollbar::-webkit-scrollbar {
+                display: none;
+              }
+            `}</style>
             <motion.div
-              initial={{ y: 20, opacity: 0, scale: 0.95 }}
-              animate={{ y: 0, opacity: 1, scale: 1 }}
-              exit={{ y: 20, opacity: 0, scale: 0.95 }}
-              className="relative bg-gray-900/95 backdrop-blur-md border border-gray-700 rounded-2xl p-6 max-w-md w-full mx-auto shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+              onClick={handleCloseModal}
             >
-              <div className="text-center mb-6">
-                <h3 className="text-2xl font-bold text-white mb-2">
-                  Select Quality
-                </h3>
-                <p className="text-gray-400 text-sm">
-                  Choose your preferred streaming quality
-                </p>
-              </div>
-
-              <div className="space-y-3 max-h-60 overflow-y-auto">
-                {movieData.quality.map((quality, index) => (
-                  <motion.button
-                    key={index}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => handleQualitySelect(index)}
-                    className={`
-                      w-full p-4 rounded-xl text-left transition-all duration-200
-                      ${
-                        index === selectedQualityIndex
-                          ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg"
-                          : "bg-white/10 text-white hover:bg-white/20"
-                      }
-                    `}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-bold text-sm">{quality.type}</div>
-                        <div className="text-xs opacity-80 mt-1">
-                          {quality.size} • {quality.audio}
+              <div
+                className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+                onClick={handleCloseModal}
+              ></div>
+              <motion.div
+                initial={{ y: 20, opacity: 0, scale: 0.95 }}
+                animate={{ y: 0, opacity: 1, scale: 1 }}
+                exit={{ y: 20, opacity: 0, scale: 0.95 }}
+                className="relative bg-gray-900/95 backdrop-blur-md border border-gray-700 rounded-2xl p-6 max-w-md w-full mx-auto shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="text-center mb-6">
+                  <h3 className="text-2xl font-bold text-white mb-2">
+                    Select Quality
+                  </h3>
+                  <p className="text-gray-400 text-sm">
+                    Choose your preferred streaming quality
+                  </p>
+                </div>
+                <div className="space-y-3 max-h-60 overflow-y-auto hide-scrollbar">
+                  {movieData.quality.map((quality, index) => (
+                    <motion.button
+                      key={index}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => handleQualitySelect(index)}
+                      className={`
+                        w-full p-4 rounded-xl text-left transition-all duration-200
+                        ${
+                          index === selectedQualityIndex
+                            ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg"
+                            : "bg-white/10 text-white hover:bg-white/20"
+                        }
+                      `}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-bold text-sm">{quality.type}</div>
+                          <div className="text-xs opacity-80 mt-1 flex flex-col">
+                            <span>{quality.size}</span>
+                            <span>{quality.audio}</span>
+                            {quality.subtitle && (
+                              <span className="opacity-70">
+                                Subtitles: {quality.subtitle}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        {quality.subtitle && (
-                          <div className="text-xs opacity-70 mt-1">
-                            Subtitles: {quality.subtitle}
+                        {index === selectedQualityIndex && (
+                          <div className="flex items-center justify-center w-8 h-8 bg-white/20 rounded-full">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-5 w-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
                           </div>
                         )}
                       </div>
-                      {index === selectedQualityIndex && (
-                        <div className="text-white">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-6 w-6"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                        </div>
-                      )}
-                    </div>
-                  </motion.button>
-                ))}
-              </div>
-
-              <button
-                onClick={handleCloseModal}
-                className="w-full mt-6 py-3 text-gray-400 hover:text-white transition-colors duration-200 text-sm"
-              >
-                Cancel
-              </button>
+                    </motion.button>
+                  ))}
+                </div>
+                <div className="flex space-x-3 mt-6">
+                  <button
+                    onClick={handleCloseModal}
+                    className="flex-1 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl transition-colors duration-200 text-sm font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleQualitySelect(selectedQualityIndex)}
+                    className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl transition-all duration-200 text-sm font-medium shadow-lg"
+                  >
+                    Play
+                  </button>
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
+          </>
         )}
       </AnimatePresence>
 
