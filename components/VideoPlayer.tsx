@@ -13,7 +13,6 @@ import {
   RiFullscreenLine,
   RiFullscreenExitLine,
 } from "react-icons/ri";
-import { FaTv } from "react-icons/fa"; // VLC Icon
 import Image from "next/image";
 
 interface VideoPlayerProps {
@@ -89,7 +88,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [activeSettingsTab, setActiveSettingsTab] =
     useState<SettingTab>("Settings");
-  const [isOrientationLocked, setIsOrientationLocked] = useState(false); // Track orientation lock
+  const [isOrientationLocked, setIsOrientationLocked] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<HTMLDivElement>(null);
@@ -756,7 +755,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 </div>
               )}
 
-              {/* VLC Button */}
+              {/* VLC Button with Custom SVG Icon */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -767,11 +766,17 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     window.location.href = `vlc://${videoSource}`;
                   }
                 }}
-                className="text-white hover:text-green-400 transition-colors"
+                className="text-white hover:text-green-400 transition-colors flex items-center justify-center"
                 aria-label="Play in VLC"
                 title="Play in VLC"
               >
-                <FaTv size={24} />
+                <Image
+                  src="https://icongr.am/entypo/traffic-cone.svg?size=114&color=ffffff"
+                  alt="VLC Icon"
+                  width={24}
+                  height={24}
+                  unoptimized
+                />
               </button>
 
               {/* Settings Button */}
