@@ -1,3 +1,4 @@
+```tsx
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import TopCard from "@/components/TopCard";
@@ -6,11 +7,12 @@ import AboutCard from "@/components/AboutCard";
 import Backward from "@/components/Backward";
 import Similar from "@/components/Similar";
 import VideoPlayer from "@/components/VideoPlayer";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useStreamToken } from "@/hooks/useStreamToken";
 import Image from "next/image";
 import Head from "next/head";
 import { NEXT_PUBLIC_SITE_NAME } from "@/config";
+
 interface MovieQuality {
   type: string;
   fileid: string;
@@ -20,6 +22,7 @@ interface MovieQuality {
   video_codec: string;
   file_type: string;
 }
+
 interface MovieData {
   id: number;
   title: string;
@@ -42,17 +45,20 @@ interface MovieData {
   studios: string[];
   links: string[];
 }
+
 interface CastMember {
   name: string;
   character: string;
   imageUrl: string;
 }
+
 const styles = {
   container: "relative z-10 px-8 sm:px-6 md:px-8 lg:px-12 pb-16 md:pb-20",
   innerContainer: "max-w-6xl mx-auto space-y-12",
   sectionHeading: "text-xl sm:text-2xl font-bold mb-4 sm:mb-8 text-white",
   skeletonBlock: "bg-gray-800 rounded animate-pulse",
 };
+
 const Slug = () => {
   const router = useRouter();
   const { slug } = router.query;
@@ -60,6 +66,7 @@ const Slug = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
+  const [showQualityModal, setShowQualityModal] = useState(false);
   const [selectedQualityIndex, setSelectedQualityIndex] = useState(0);
   const { streamUrl } = useStreamToken({
     contentId: movieData?.id || 0,
@@ -67,6 +74,7 @@ const Slug = () => {
     qualityIndex: selectedQualityIndex,
     isActive: true,
   });
+
   useEffect(() => {
     const fetchMovieDetails = async () => {
       if (!slug) return;
@@ -87,13 +95,25 @@ const Slug = () => {
     };
     fetchMovieDetails();
   }, [slug]);
-  const handlePlayClick = (qualityIndex = 0) => {
-    setSelectedQualityIndex(qualityIndex);
+
+  const handlePlayClick = () => {
+    setShowQualityModal(true);
+  };
+
+  const handleQualitySelect = (index: number) => {
+    setSelectedQualityIndex(index);
+    setShowQualityModal(false);
     setShowVideoPlayer(true);
   };
+
   const handleCloseVideoPlayer = () => {
     setShowVideoPlayer(false);
   };
+
+  const handleCloseModal = () => {
+    setShowQualityModal(false);
+  };
+
   // Skeleton Loader Component
   const SkeletonLoader = () => (
     <div className="min-h-screen">
@@ -172,9 +192,11 @@ const Slug = () => {
       </div>
     </div>
   );
+
   if (loading) {
     return <SkeletonLoader />;
   }
+
   if (error || !movieData) {
     return (
       <div className="min-h-screen flex items-center justify-center text-white">
@@ -182,14 +204,17 @@ const Slug = () => {
       </div>
     );
   }
+
   const year = movieData.release_date
     ? new Date(movieData.release_date).getFullYear()
     : 2025;
+
   interface ContentSectionProps {
     title?: string;
     children: React.ReactNode;
     className?: string;
   }
+
   const ContentSection = ({
     title,
     children,
@@ -200,6 +225,7 @@ const Slug = () => {
       {children}
     </section>
   );
+
   return (
     <div className="font-mont min-h-screen relative">
       <Head>
@@ -288,36 +314,6 @@ const Slug = () => {
               streamUrl={streamUrl ?? undefined}
             />
           </ContentSection>
-
-          {/* Quality Selection Buttons */}
-          <ContentSection title="Select Quality">
-            <div className="flex flex-wrap gap-3">
-              {movieData.quality.map((quality, index) => (
-                <button
-                  key={index}
-                  onClick={() => handlePlayClick(index)}
-                  className={`
-                    px-6 py-3 rounded-full font-semibold text-sm transition-all duration-300
-                    flex items-center gap-2 min-w-max
-                    ${
-                      index === selectedQualityIndex
-                        ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg scale-105"
-                        : "bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm"
-                    }
-                    hover:shadow-xl hover:scale-105
-                  `}
-                >
-                  <span className="font-bold">{quality.type}</span>
-                  <span className="text-xs opacity-90">• {quality.size}</span>
-                  <span className="text-xs opacity-80">• {quality.audio}</span>
-                </button>
-              ))}
-            </div>
-            <p className="text-gray-300 text-sm mt-2">
-              Click any quality button to start streaming instantly.
-            </p>
-          </ContentSection>
-
           <ContentSection title="Cast & Crew">
             <CastCrew castMembers={movieData.cast} />
           </ContentSection>
@@ -338,7 +334,100 @@ const Slug = () => {
           </ContentSection>
         </div>
       </div>
-      {/* Video Player  */}
+
+      {/* Quality Selection Modal */}
+      <AnimatePresence>
+        {showQualityModal && movieData && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            onClick={handleCloseModal}
+          >
+            <div
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              onClick={handleCloseModal}
+            ></div>
+            <motion.div
+              initial={{ y: 20, opacity: 0, scale: 0.95 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: 20, opacity: 0, scale: 0.95 }}
+              className="relative bg-gray-900/95 backdrop-blur-md border border-gray-700 rounded-2xl p-6 max-w-md w-full mx-auto shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center mb-6">
+                <h3 className="text-2xl font-bold text-white mb-2">
+                  Select Quality
+                </h3>
+                <p className="text-gray-400 text-sm">
+                  Choose your preferred streaming quality
+                </p>
+              </div>
+
+              <div className="space-y-3 max-h-60 overflow-y-auto">
+                {movieData.quality.map((quality, index) => (
+                  <motion.button
+                    key={index}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => handleQualitySelect(index)}
+                    className={`
+                      w-full p-4 rounded-xl text-left transition-all duration-200
+                      ${
+                        index === selectedQualityIndex
+                          ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg"
+                          : "bg-white/10 text-white hover:bg-white/20"
+                      }
+                    `}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-bold text-sm">{quality.type}</div>
+                        <div className="text-xs opacity-80 mt-1">
+                          {quality.size} • {quality.audio}
+                        </div>
+                        {quality.subtitle && (
+                          <div className="text-xs opacity-70 mt-1">
+                            Subtitles: {quality.subtitle}
+                          </div>
+                        )}
+                      </div>
+                      {index === selectedQualityIndex && (
+                        <div className="text-white">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-6 w-6"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
+
+              <button
+                onClick={handleCloseModal}
+                className="w-full mt-6 py-3 text-gray-400 hover:text-white transition-colors duration-200 text-sm"
+              >
+                Cancel
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Video Player */}
       <AnimatePresence>
         {showVideoPlayer && streamUrl && (
           <VideoPlayer
@@ -358,4 +447,6 @@ const Slug = () => {
     </div>
   );
 };
+
 export default Slug;
+```
