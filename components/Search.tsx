@@ -7,7 +7,7 @@ interface SearchResult {
   id: number;
   title: string;
   year: number;
-  poster: string;
+  poster: string | null;
   vote_average: number;
   vote_count: number;
   media_type: string;
@@ -18,17 +18,20 @@ interface SearchProps {
   searchQuery: string;
 }
 
+const DEBOUNCE_MS = 300;
+
 const Search = forwardRef<HTMLDivElement, SearchProps>(
   ({ isVisible, searchQuery }, ref) => {
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [lastSearchQuery, setLastSearchQuery] = useState("");
 
-    const debouncedSearch = useCallback(
+    // Debounced search function
+    const handleSearch = useCallback(
       debounce(async (query: string) => {
         if (query.length < 3) {
           setResults([]);
+          setIsLoading(false);
           return;
         }
 
@@ -36,42 +39,35 @@ const Search = forwardRef<HTMLDivElement, SearchProps>(
         setError(null);
 
         try {
-          const response = await fetch(
-            `/api/handle_search?query=${encodeURIComponent(query)}`
-          );
-          if (!response.ok) {
-            throw new Error("Failed to fetch search results");
-          }
+          const res = await fetch(`/api/handle_search?query=${encodeURIComponent(query)}`);
+          if (!res.ok) throw new Error("Network response was not ok");
 
-          const data = await response.json();
+          const data: SearchResult[] = await res.json();
           setResults(data);
-          setLastSearchQuery(query);
         } catch (err) {
+          console.error("Search error:", err);
           setError("An error occurred while searching. Please try again.");
-          console.error(err);
+          setResults([]);
         } finally {
           setIsLoading(false);
         }
-      }, 500),
+      }, DEBOUNCE_MS),
       []
     );
 
+    // Trigger search when query or visibility changes
     useEffect(() => {
-      if (
-        isVisible &&
-        searchQuery &&
-        searchQuery !== lastSearchQuery &&
-        searchQuery.length >= 3
-      ) {
-        debouncedSearch(searchQuery);
-      } else if (searchQuery.length < 3) {
+      if (isVisible && searchQuery.length >= 1) {
+        handleSearch(searchQuery);
+      } else if (!isVisible || searchQuery.length === 0) {
         setResults([]);
       }
 
+      // Cleanup debounce on unmount
       return () => {
-        debouncedSearch.cancel();
+        handleSearch.cancel();
       };
-    }, [searchQuery, debouncedSearch, isVisible, lastSearchQuery]);
+    }, [searchQuery, isVisible, handleSearch]);
 
     if (!isVisible) return null;
 
@@ -106,15 +102,21 @@ const Search = forwardRef<HTMLDivElement, SearchProps>(
                 className="block hover:bg-gray-800 transition-colors"
               >
                 <div className="flex p-2 sm:p-3">
-                  <div className="w-12 h-18 sm:w-16 sm:h-24 flex-shrink-0 relative rounded overflow-hidden">
-                    <Image
-                      src={`https://image.tmdb.org/t/p/w500${item.poster}`}
-                      alt={item.title}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 640px) 48px, 64px"
-                      unoptimized
-                    />
+                  <div className="w-12 h-18 sm:w-16 sm:h-24 flex-shrink-0 relative rounded overflow-hidden bg-gray-800">
+                    {item.poster ? (
+                      <Image
+                        src={`https://image.tmdb.org/t/p/w500${item.poster}`} // ✅ Fixed: Removed extra spaces
+                        alt={item.title}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 48px, 64px"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-xs text-gray-500">
+                        No Image
+                      </div>
+                    )}
                   </div>
                   <div className="ml-2 sm:ml-3 flex-grow">
                     <p className="font-medium text-xs sm:text-sm truncate">
@@ -123,9 +125,7 @@ const Search = forwardRef<HTMLDivElement, SearchProps>(
                     <div className="flex items-center text-xs text-gray-400 mt-0.5 sm:mt-1">
                       <span>{item.year}</span>
                       <span className="mx-1 sm:mx-2">•</span>
-                      <span className="flex items-center">
-                        ⭐ {item.vote_average.toFixed(1)}
-                      </span>
+                      <span className="flex items-center">⭐ {item.vote_average.toFixed(1)}</span>
                     </div>
                     <span className="inline-block mt-1 sm:mt-2 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 bg-gray-700 rounded-full">
                       {item.media_type === "movie" ? "Movie" : "TV Show"}
