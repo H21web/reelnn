@@ -1,4 +1,3 @@
-```tsx
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import TopCard from "@/components/TopCard";
@@ -449,4 +448,3 @@ const Slug = () => {
 };
 
 export default Slug;
-```
