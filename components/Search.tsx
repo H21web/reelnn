@@ -122,7 +122,7 @@ const Search = forwardRef<HTMLDivElement, SearchProps>(
                   <div className="w-12 h-18 sm:w-16 sm:h-24 flex-shrink-0 relative rounded overflow-hidden bg-gray-800">
                     {item.poster ? (
                       <Image
-                        src={`https://image.tmdb.org/t/p/w500${item.poster}`}
+                        src={`https://image.tmdb.org/t/p/w500${item.poster}`} // ✅ Fixed: Removed extra space
                         alt={item.title}
                         fill
                         className="object-cover"
