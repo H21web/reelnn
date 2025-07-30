@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   FiChevronDown,
   FiSearch,
@@ -9,10 +9,10 @@ import {
 import Image from "next/image";
 import VideoPlayer from "./VideoPlayer";
 import { useStreamToken } from '@/hooks/useStreamToken';
-import { AnimatePresence } from "framer-motion";
 import Download from "./Download";
 
 
+// ---- Interfaces ----
 interface ShowQuality {
   type: string;
   fileID: string;
@@ -54,11 +54,10 @@ interface EpisodeListProps {
   currentSeason: number;
 }
 
-// Season Selector Component
+
+// ---- SEASON SELECTOR ----
 const SeasonSelector: React.FC<SeasonSelectorProps> = ({
-  currentSeason,
-  seasons,
-  onSeasonChange,
+  currentSeason, seasons, onSeasonChange
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -72,12 +71,9 @@ const SeasonSelector: React.FC<SeasonSelectorProps> = ({
       >
         <span>Season {currentSeason}</span>
         <FiChevronDown
-          className={`ml-2 transition-transform duration-200 ${
-            isOpen ? "rotate-180" : ""
-          }`}
+          className={`ml-2 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
         />
       </motion.button>
-
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -109,38 +105,32 @@ const SeasonSelector: React.FC<SeasonSelectorProps> = ({
   );
 };
 
-// Search Bar Component
-const SearchBar: React.FC<{ onSearch: (query: string) => void }> = ({
-  onSearch,
-}) => {
-  return (
-    <div className="font-mont relative w-full">
-      <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" />
-      <input
-        type="text"
-        placeholder="Search episode..."
-        onChange={(e) => onSearch(e.target.value)}
-        className="w-full bg-transparent backdrop-blur-md border border-gray-700 py-2 pl-10 pr-4 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-gray-500 transition-colors"
-        aria-label="Search episodes"
-      />
-    </div>
-  );
-};
 
-// Episode Item Component
+// ---- SEARCH BAR ----
+const SearchBar: React.FC<{ onSearch: (query: string) => void }> = ({ onSearch }) => (
+  <div className="font-mont relative w-full">
+    <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" />
+    <input
+      type="text"
+      placeholder="Search episode..."
+      onChange={(e) => onSearch(e.target.value)}
+      className="w-full bg-transparent backdrop-blur-md border border-gray-700 py-2 pl-10 pr-4 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-gray-500 transition-colors"
+      aria-label="Search episodes"
+    />
+  </div>
+);
+
+
+// ---- EPISODE ITEM ----
 const EpisodeItem: React.FC<{ episode: Episode; index: number; showId: string; seasonNumber: number }> = ({
-  episode,
-  index,
-  showId,
-  seasonNumber,
+  episode, index, showId, seasonNumber
 }) => {
   const [showQualityOptions, setShowQualityOptions] = useState(false);
   const [selectedQuality, setSelectedQuality] = useState(
     episode.quality && episode.quality.length > 0 ? 0 : -1
   );
   const [showPlayer, setShowPlayer] = useState(false);
-  const [showDownload, setShowDownload] = useState(false); 
-
+  const [showDownload, setShowDownload] = useState(false);
 
   const { streamUrl } = useStreamToken({
     contentId: showId,
@@ -148,10 +138,9 @@ const EpisodeItem: React.FC<{ episode: Episode; index: number; showId: string; s
     qualityIndex: selectedQuality,
     seasonNumber: seasonNumber,
     episodeNumber: episode.episode_number,
-    isActive: showPlayer || showDownload 
+    isActive: showPlayer || showDownload
   });
 
-  // Memoize the quality info to prevent unnecessary calculations
   const currentQuality = useMemo(() => (
     episode.quality && selectedQuality >= 0 && selectedQuality < episode.quality.length
       ? episode.quality[selectedQuality]
@@ -163,23 +152,15 @@ const EpisodeItem: React.FC<{ episode: Episode; index: number; showId: string; s
     : "/placeholder-episode.jpg";
 
   const handlePlay = () => {
-    if (episode.quality && episode.quality.length > 0 && selectedQuality >= 0) {
-      setShowPlayer(true);
-    }
+    if (episode.quality && episode.quality.length > 0 && selectedQuality >= 0) setShowPlayer(true);
   };
 
-  const closePlayer = () => {
-    setShowPlayer(false);
-  };
+  const closePlayer = () => setShowPlayer(false);
 
-  // Handle download button click
   const handleDownload = () => {
-    if (episode.quality && episode.quality.length > 0 && selectedQuality >= 0) {
-      setShowDownload(true);
-    }
+    if (episode.quality && episode.quality.length > 0 && selectedQuality >= 0) setShowDownload(true);
   };
 
-  // Create episode title
   const episodeTitle = `${episode.name || `Episode ${episode.episode_number}`}`;
 
   return (
@@ -187,7 +168,7 @@ const EpisodeItem: React.FC<{ episode: Episode; index: number; showId: string; s
       whileHover={{ backgroundColor: "rgba(55, 55, 55, 0.4)" }}
       className="flex flex-col sm:flex-row items-start p-3 sm:p-4 border-b border-gray-800 relative group"
     >
-
+      {/* Download Dialog */}
       <AnimatePresence>
         {showDownload && currentQuality && (
           <Download
@@ -210,7 +191,6 @@ const EpisodeItem: React.FC<{ episode: Episode; index: number; showId: string; s
           />
         )}
       </AnimatePresence>
-
       {/* Episode thumbnail */}
       <div className="flex-shrink-0 relative w-full sm:w-32 h-40 sm:h-20 mb-2 sm:mb-0 sm:mr-4">
         <div className="w-full h-full bg-gray-800 relative overflow-hidden rounded">
@@ -235,7 +215,7 @@ const EpisodeItem: React.FC<{ episode: Episode; index: number; showId: string; s
           )}
         </div>
       </div>
-
+      {/* Episode details */}
       <div className="flex-grow w-full sm:w-auto pr-20 sm:pr-24">
         <h3 className="text-lg font-semibold text-white truncate">
           {episode.episode_number}. {episode.name || "Untitled Episode"}
@@ -249,21 +229,21 @@ const EpisodeItem: React.FC<{ episode: Episode; index: number; showId: string; s
               {new Date(episode.air_date).toLocaleDateString()}
             </span>
           )}
+          {/* Quality Button */}
           {episode.quality &&
             episode.quality.length > 0 &&
             selectedQuality >= 0 && (
               <>
                 <button
                   onClick={() => setShowQualityOptions(!showQualityOptions)}
-                  className="inline-flex items-center gap-1 bg-gray-700 px-2 py-0.5 rounded hover:bg-gray-600 transition-colors"
+                  className={`inline-flex items-center gap-1 border-2 border-yellow-400 bg-gray-700 px-2 py-0.5 rounded
+                    hover:bg-yellow-600 hover:text-black focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-all font-semibold`}
                 >
-                  <span>
+                  <span className="text-yellow-400">
                     {episode.quality[selectedQuality].type || "Quality"}
                   </span>
                   <FiChevronDown
-                    className={`transition-transform ${
-                      showQualityOptions ? "rotate-180" : ""
-                    }`}
+                    className={`transition-transform ${showQualityOptions ? "rotate-180" : ""} text-yellow-400`}
                   />
                 </button>
                 {episode.quality[selectedQuality].video_codec && (
@@ -279,7 +259,6 @@ const EpisodeItem: React.FC<{ episode: Episode; index: number; showId: string; s
               </>
             )}
         </div>
-
         {/* Quality selector dropdown */}
         {showQualityOptions &&
           episode.quality &&
@@ -287,14 +266,15 @@ const EpisodeItem: React.FC<{ episode: Episode; index: number; showId: string; s
             <motion.div
               initial={{ opacity: 0, y: -5 }}
               animate={{ opacity: 1, y: 0 }}
-              className="absolute z-20 mt-1 bg-gray-800 rounded-md shadow-lg border border-gray-700 w-38 ml-16"
+              className="absolute z-20 mt-1 bg-gray-800 rounded-md shadow-lg border border-yellow-400 w-38 ml-16"
             >
               {episode.quality.map((quality, idx) => (
                 <button
                   key={idx}
-                  className={`flex-col w-full text-left px-3 py-2 hover:bg-gray-700 transition-colors ${
-                    selectedQuality === idx ? "bg-gray-700" : ""
-                  }`}
+                  className={`flex-col w-full text-left px-3 py-2 hover:bg-yellow-600 hover:text-black
+                    transition-colors font-semibold
+                    ${selectedQuality === idx ? "bg-yellow-400 text-black" : ""}
+                  `}
                   onClick={() => {
                     setSelectedQuality(idx);
                     setShowQualityOptions(false);
@@ -302,7 +282,6 @@ const EpisodeItem: React.FC<{ episode: Episode; index: number; showId: string; s
                 >
                   <div className="text-sm">{quality.type || "Unknown"}</div>
                   <div className="text-xs text-gray-400 flex flex-wrap gap-1">
-                    
                     {quality.video_codec && <span> {quality.video_codec}</span>}
                     {quality.size && <div className="ml-auto">{quality.size}</div>}
                   </div>
@@ -311,27 +290,29 @@ const EpisodeItem: React.FC<{ episode: Episode; index: number; showId: string; s
             </motion.div>
           )}
       </div>
+      {/* Play & Download buttons - now highlighted */}
       <div className="flex gap-2 absolute top-1/2 -translate-y-1/2 right-4 z-10 sm:flex-col">
         <motion.button
-          whileHover={{ scale: 1.1 }}
-          className="p-2 rounded-full bg-gray-700 hover:bg-red-500 text-white shadow-md"
+          whileHover={{ scale: 1.13 }}
+          whileFocus={{ scale: 1.15 }}
+          className="p-2 rounded-full border-2 border-red-500 bg-gray-700 shadow-lg focus:outline-none focus:ring-4 focus:ring-red-500 transition-all hover:bg-red-600 hover:shadow-red-500/50"
           aria-label="Play episode"
           onClick={handlePlay}
         >
-          <FiPlay size={16} className="sm:size-[18px]" />
+          <FiPlay size={18} className="sm:size-[18px] text-red-300 group-hover:text-white" />
         </motion.button>
 
         <motion.button
-          whileHover={{ scale: 1.1 }}
-          className="p-2 rounded-full bg-gray-700 hover:bg-blue-500 text-white shadow-md"
+          whileHover={{ scale: 1.13 }}
+          whileFocus={{ scale: 1.15 }}
+          className="p-2 rounded-full border-2 border-blue-500 bg-gray-700 shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-500 transition-all hover:bg-blue-600 hover:shadow-blue-500/50"
           aria-label="Download episode"
           onClick={handleDownload}
         >
-          <FiDownload size={16} className="sm:size-[18px]" />
+          <FiDownload size={18} className="sm:size-[18px] text-blue-300 group-hover:text-white" />
         </motion.button>
       </div>
-      
-      {/* Video Player Component */}
+      {/* Video Player display */}
       {showPlayer && episode.quality && episode.quality.length > 0 && selectedQuality >= 0 && streamUrl && (
         <VideoPlayer
           videoSource={streamUrl}
@@ -344,7 +325,8 @@ const EpisodeItem: React.FC<{ episode: Episode; index: number; showId: string; s
   );
 };
 
-// Episode List Component
+
+// ---- EPISODE LIST ----
 const EpisodeList: React.FC<EpisodeListProps & { showId: string; currentSeason: number }> = ({
   episodes,
   searchQuery,
@@ -353,7 +335,7 @@ const EpisodeList: React.FC<EpisodeListProps & { showId: string; currentSeason: 
 }) => {
   const filteredEpisodes = useMemo(() => {
     return episodes
-      .filter(episode => 
+      .filter(episode =>
         episode.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         episode.overview?.toLowerCase().includes(searchQuery.toLowerCase())
       )
@@ -367,8 +349,6 @@ const EpisodeList: React.FC<EpisodeListProps & { showId: string; currentSeason: 
       </div>
     );
   }
-
-
   const shouldUseScroll = filteredEpisodes.length >= 3;
   const containerClassName = `mt-4 border-t border-gray-800 ${
     shouldUseScroll ? 'max-h-[500px] overflow-y-auto pr-1 custom-scrollbar' : ''
@@ -396,40 +376,29 @@ const EpisodeList: React.FC<EpisodeListProps & { showId: string; currentSeason: 
 };
 
 
-// Main Component
+// ---- MAIN COMPONENT ----
 const TVShowEpisodes: React.FC<TVShowEpisodesProps & { showId: string }> = ({ seasons, showId }) => {
   const [currentSeasonIndex, setCurrentSeasonIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Handle missing or empty seasons
   if (!seasons || seasons.length === 0) {
     return (
       <section className="text-white" aria-labelledby="episodes-heading">
-      
         <div className="max-w-6xl mx-auto">
-        <h2 id="episodes-heading" className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Episodes</h2>
-        <div className="text-center py-8 text-gray-400">No episodes available for this show.</div>
+          <h2 id="episodes-heading" className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Episodes</h2>
+          <div className="text-center py-8 text-gray-400">No episodes available for this show.</div>
         </div>
       </section>
     );
   }
 
   const seasonNumbers = seasons.map(season => season.season_number);
-  
-
   const currentSeason = seasonNumbers[currentSeasonIndex] || seasonNumbers[0] || 1;
-
-
   const currentEpisodes = seasons.find(s => s.season_number === currentSeason)?.episodes || [];
 
   return (
-    <section
-      className="text-white"
-      aria-labelledby="episodes-heading"
-    >
+    <section className="text-white" aria-labelledby="episodes-heading">
       <div className="max-w-6xl mx-auto">
-        
-
         <div className="flex flex-col sm:flex-row justify-between mb-4 sm:mb-6 gap-3 sm:gap-4">
           <SeasonSelector
             currentSeason={currentSeason}
@@ -439,10 +408,8 @@ const TVShowEpisodes: React.FC<TVShowEpisodesProps & { showId: string }> = ({ se
               if (index !== -1) setCurrentSeasonIndex(index);
             }}
           />
-
           <SearchBar onSearch={setSearchQuery} />
         </div>
-
         <EpisodeList
           episodes={currentEpisodes}
           searchQuery={searchQuery}
