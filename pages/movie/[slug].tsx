@@ -105,6 +105,7 @@ const Slug = () => {
     setShowQualityModal(false);
     setShowVideoPlayer(true);
   };
+
   const handleCloseVideoPlayer = () => {
     setShowVideoPlayer(false);
   };
@@ -387,23 +388,30 @@ const Slug = () => {
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleQualitySelect(index)}
                       className={`
-                        w-full p-4 rounded-xl text-left transition-all duration-200
+                        w-full p-4 rounded-xl text-left transition-all duration-200 relative
                         ${
                           index === selectedQualityIndex
-                            ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg"
+                            ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/25"
                             : "bg-white/10 text-white hover:bg-white/20"
                         }
                       `}
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <div className="font-bold text-sm">{quality.type}</div>
+                          <div className="font-bold text-sm flex items-center gap-2">
+                            {quality.type}
+                            {index === selectedQualityIndex && (
+                              <span className="bg-white/20 text-xs px-2 py-0.5 rounded-full">
+                                Selected
+                              </span>
+                            )}
+                          </div>
                           <div className="text-xs opacity-80 mt-1 flex flex-col">
                             <span>{quality.size}</span>
                             <span>{quality.audio}</span>
                             {quality.subtitle && (
                               <span className="opacity-70">
-                                Subtitles: {quality.subtitle}
+                                Sub: {quality.subtitle}
                               </span>
                             )}
                           </div>
