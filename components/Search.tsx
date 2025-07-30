@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, forwardRef } from "react";
+import { useState, useEffect, forwardRef, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { debounce } from "lodash";
@@ -7,7 +7,7 @@ interface SearchResult {
   id: number;
   title: string;
   year: number;
-  poster: string;
+  poster: string | null;
   vote_average: number;
   vote_count: number;
   media_type: string;
@@ -18,60 +18,73 @@ interface SearchProps {
   searchQuery: string;
 }
 
+const DEBOUNCE_MS = 200;
+
 const Search = forwardRef<HTMLDivElement, SearchProps>(
   ({ isVisible, searchQuery }, ref) => {
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [lastSearchQuery, setLastSearchQuery] = useState("");
 
-    const debouncedSearch = useCallback(
-      debounce(async (query: string) => {
-        if (query.length < 3) {
-          setResults([]);
-          return;
-        }
+    // Use ref to keep track of latest query
+    const lastQueryRef = useRef("");
+    // Abort Controller to cancel fetch
+    const abortControllerRef = useRef<AbortController>();
 
-        setIsLoading(true);
+    useEffect(() => {
+      if (!isVisible) {
+        setResults([]);
+        return;
+      }
+
+      if (searchQuery.length < 3) {
+        setResults([]);
+        setIsLoading(false);
         setError(null);
+        return;
+      }
 
+      setIsLoading(true);
+      setError(null);
+
+      // Debounced search function
+      const handler = debounce(async (query: string) => {
+        // Cancel any pending request
+        if (abortControllerRef.current) abortControllerRef.current.abort();
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
+        lastQueryRef.current = query;
         try {
           const response = await fetch(
-            `/api/handle_search?query=${encodeURIComponent(query)}`
+            `/api/handle_search?query=${encodeURIComponent(query)}`,
+            { signal: controller.signal }
           );
-          if (!response.ok) {
-            throw new Error("Failed to fetch search results");
-          }
-
+          if (!response.ok) throw new Error("Failed to fetch search results");
           const data = await response.json();
-          setResults(data);
-          setLastSearchQuery(query);
-        } catch (err) {
+          // Only update state if this is the latest query
+          if (lastQueryRef.current === query) {
+            setResults(data);
+            setError(null);
+          }
+        } catch (err: any) {
+          if (err.name === "AbortError") return; // Ignore abort
           setError("An error occurred while searching. Please try again.");
           console.error(err);
         } finally {
-          setIsLoading(false);
+          // Set loading false only if this is latest search
+          if (lastQueryRef.current === query) setIsLoading(false);
         }
-      }, 500),
-      []
-    );
+      }, DEBOUNCE_MS);
 
-    useEffect(() => {
-      if (
-        isVisible &&
-        searchQuery &&
-        searchQuery !== lastSearchQuery &&
-        searchQuery.length >= 3
-      ) {
-        debouncedSearch(searchQuery);
-      } else if (searchQuery.length < 3) {
-        setResults([]);
-      }
+      handler(searchQuery);
 
+      // Cleanup on effect re-run or unmount
       return () => {
-        debouncedSearch.cancel();
+        handler.cancel();
+        if (abortControllerRef.current) abortControllerRef.current.abort();
       };
-    }, [searchQuery, debouncedSearch, isVisible, lastSearchQuery]);
+    }, [searchQuery, isVisible]);
 
     if (!isVisible) return null;
 
@@ -106,15 +119,21 @@ const Search = forwardRef<HTMLDivElement, SearchProps>(
                 className="block hover:bg-gray-800 transition-colors"
               >
                 <div className="flex p-2 sm:p-3">
-                  <div className="w-12 h-18 sm:w-16 sm:h-24 flex-shrink-0 relative rounded overflow-hidden">
-                    <Image
-                      src={`https://image.tmdb.org/t/p/w500${item.poster}`}
-                      alt={item.title}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 640px) 48px, 64px"
-                      unoptimized
-                    />
+                  <div className="w-12 h-18 sm:w-16 sm:h-24 flex-shrink-0 relative rounded overflow-hidden bg-gray-800">
+                    {item.poster ? (
+                      <Image
+                        src={`https://image.tmdb.org/t/p/w500${item.poster}`}
+                        alt={item.title}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 48px, 64px"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-xs text-gray-600 bg-gray-900">
+                        No Image
+                      </div>
+                    )}
                   </div>
                   <div className="ml-2 sm:ml-3 flex-grow">
                     <p className="font-medium text-xs sm:text-sm truncate">
