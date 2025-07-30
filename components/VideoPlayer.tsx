@@ -15,12 +15,6 @@ import {
 } from "react-icons/ri";
 import Image from "next/image";
 
-// Extend ScreenOrientation to include lock/unlock methods
-interface ExtendedScreenOrientation extends ScreenOrientation {
-  lock?(orientation: "landscape"): Promise<void>;
-  unlock?(): void;
-}
-
 interface VideoPlayerProps {
   videoSource: string;
   title?: string;
@@ -37,9 +31,9 @@ const aspectRatioModes = [
   "fill",
   "ratio16_9",
   "ratio4_3",
-] as const;
-
+] as const; 
 type AspectRatioMode = (typeof aspectRatioModes)[number];
+
 const settingTabs = ["Speed", "Subtitles", "Settings"] as const;
 type SettingTab = (typeof settingTabs)[number];
 
@@ -82,26 +76,21 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     bufferProgress: 0,
   });
 
-  const updatePlayerState = useCallback(
-    (updates: Partial<typeof playerState>) => {
-      setPlayerState((prev) => ({ ...prev, ...updates }));
-    },
-    []
-  );
+  const updatePlayerState = useCallback((updates: Partial<typeof playerState>) => {
+    setPlayerState((prev) => ({ ...prev, ...updates }));
+  }, []);
 
   const [aspectRatioMode, setAspectRatioMode] =
     useState<AspectRatioMode>("bestFit");
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [activeSettingsTab, setActiveSettingsTab] =
     useState<SettingTab>("Settings");
-  const [isOrientationLocked, setIsOrientationLocked] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const settingsMenuRef = useRef<HTMLDivElement>(null);
 
-  // Save/Resume video position
   useEffect(() => {
     const videoElement = videoRef.current;
     if (!videoElement) return;
@@ -119,73 +108,76 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
 
     window.addEventListener("beforeunload", handleBeforeUnload);
-    return () =>
-      window.removeEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
 
-  // Time and metadata updates
+useEffect(() => {
+  const videoElement = videoRef.current;
+  if (!videoElement) return;
+
+  const handleTimeUpdate = () => {
+    updatePlayerState({
+      currentTime: videoElement.currentTime,
+      progress: (videoElement.currentTime / videoElement.duration) * 100,
+    });
+  };
+
+  const handleLoadedMetadata = () => {
+    updatePlayerState({
+      duration: videoElement.duration,
+      volume: videoElement.volume,
+      playbackRate: videoElement.playbackRate,
+    });
+  };
+
+  videoElement.addEventListener("timeupdate", handleTimeUpdate);
+  videoElement.addEventListener("loadedmetadata", handleLoadedMetadata);
+
+  videoElement.volume = playerState.volume;
+  videoElement.playbackRate = playerState.playbackRate;
+
+  return () => {
+    videoElement.removeEventListener("timeupdate", handleTimeUpdate);
+    videoElement.removeEventListener("loadedmetadata", handleLoadedMetadata);
+  };
+}, [playerState.volume, playerState.playbackRate, updatePlayerState]);
+
+
   useEffect(() => {
-    const videoElement = videoRef.current;
-    if (!videoElement) return;
+  const resetTimer = () => {
+    updatePlayerState({ showControls: true });
+    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
 
-    const handleTimeUpdate = () => {
-      updatePlayerState({
-        currentTime: videoElement.currentTime,
-        progress: (videoElement.currentTime / videoElement.duration) * 100,
-      });
-    };
+    controlsTimeoutRef.current = setTimeout(() => {
+      updatePlayerState({ showControls: false });
+    }, 3000);
+  };
 
-    const handleLoadedMetadata = () => {
-      updatePlayerState({
-        duration: videoElement.duration,
-        volume: videoElement.volume,
-        playbackRate: videoElement.playbackRate,
-      });
-    };
-
-    videoElement.addEventListener("timeupdate", handleTimeUpdate);
-    videoElement.addEventListener("loadedmetadata", handleLoadedMetadata);
-
-    return () => {
-      videoElement.removeEventListener("timeupdate", handleTimeUpdate);
-      videoElement.removeEventListener("loadedmetadata", handleLoadedMetadata);
-    };
-  }, [playerState.volume, playerState.playbackRate, updatePlayerState]);
-
-  // Hide controls after inactivity
-  useEffect(() => {
-    const resetTimer = () => {
-      updatePlayerState({ showControls: true });
-      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-      controlsTimeoutRef.current = setTimeout(() => {
-        updatePlayerState({ showControls: false });
-      }, 3000);
-    };
-
-    const handleInteraction = () => {
-      resetTimer();
-    };
-
+  const handleInteraction = () => {
     resetTimer();
+  };
 
-    const playerElement = playerRef.current;
+  resetTimer();
+
+  const playerElement = playerRef.current;
+  if (playerElement) {
+    playerElement.addEventListener("mousemove", handleInteraction);
+    playerElement.addEventListener("click", handleInteraction);
+  }
+
+  document.addEventListener("keydown", handleInteraction);
+
+  return () => {
     if (playerElement) {
-      playerElement.addEventListener("mousemove", handleInteraction);
-      playerElement.addEventListener("click", handleInteraction);
+      playerElement.removeEventListener("mousemove", handleInteraction);
+      playerElement.removeEventListener("click", handleInteraction);
     }
-    document.addEventListener("keydown", handleInteraction);
+    document.removeEventListener("keydown", handleInteraction);
+    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+  };
+}, [updatePlayerState]);
 
-    return () => {
-      if (playerElement) {
-        playerElement.removeEventListener("mousemove", handleInteraction);
-        playerElement.removeEventListener("click", handleInteraction);
-      }
-      document.removeEventListener("keydown", handleInteraction);
-      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-    };
-  }, [updatePlayerState]);
 
-  // Close settings menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const settingsButton = document.getElementById("video-settings-button");
@@ -202,76 +194,76 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     if (showSettingsMenu) {
       document.addEventListener("mousedown", handleClickOutside);
     }
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showSettingsMenu]);
 
-  // Buffering & loading state
   useEffect(() => {
-    const videoElement = videoRef.current;
-    if (!videoElement) return;
+  const videoElement = videoRef.current;
+  if (!videoElement) return;
 
-    const handleLoadingChange = () => {
-      updatePlayerState({ isLoading: videoElement.readyState < 3 });
-    };
+  const handleLoadingChange = () => {
+    updatePlayerState({ isLoading: videoElement.readyState < 3 });
+  };
 
-    const handleProgress = () => {
-      if (!videoElement.duration || !isFinite(videoElement.duration)) return;
-      const buffer = videoElement.buffered;
-      if (buffer.length > 0) {
-        const bufferedEnd = buffer.end(buffer.length - 1);
-        updatePlayerState({
-          bufferProgress: (bufferedEnd / videoElement.duration) * 100,
-        });
-      }
-    };
+  const handleProgress = () => {
+    if (!videoElement.duration || !isFinite(videoElement.duration)) return;
 
-    handleLoadingChange();
+    const buffer = videoElement.buffered;
+    if (buffer.length > 0) {
+      const bufferedEnd = buffer.end(buffer.length - 1);
+      updatePlayerState({
+        bufferProgress: (bufferedEnd / videoElement.duration) * 100,
+      });
+    }
+  };
+  handleLoadingChange();
 
-    videoElement.addEventListener("waiting", () =>
+  videoElement.addEventListener("waiting", () =>
+    updatePlayerState({ isLoading: true })
+  );
+  videoElement.addEventListener("playing", () =>
+    updatePlayerState({ isLoading: false })
+  );
+  videoElement.addEventListener("canplay", handleLoadingChange);
+  videoElement.addEventListener("canplaythrough", handleLoadingChange);
+  videoElement.addEventListener("progress", handleProgress);
+
+  videoElement.addEventListener("stalled", () =>
+    updatePlayerState({ isLoading: true })
+  );
+
+  videoElement.addEventListener("seeking", () =>
+    updatePlayerState({ isLoading: true })
+  );
+  videoElement.addEventListener("seeked", handleLoadingChange);
+
+  return () => {
+    videoElement.removeEventListener("waiting", () =>
       updatePlayerState({ isLoading: true })
     );
-    videoElement.addEventListener("playing", () =>
+    videoElement.removeEventListener("playing", () =>
       updatePlayerState({ isLoading: false })
     );
-    videoElement.addEventListener("canplay", handleLoadingChange);
-    videoElement.addEventListener("canplaythrough", handleLoadingChange);
-    videoElement.addEventListener("progress", handleProgress);
-    videoElement.addEventListener("stalled", () =>
+    videoElement.removeEventListener("canplay", handleLoadingChange);
+    videoElement.removeEventListener("canplaythrough", handleLoadingChange);
+    videoElement.removeEventListener("progress", handleProgress);
+    videoElement.removeEventListener("stalled", () =>
       updatePlayerState({ isLoading: true })
     );
-    videoElement.addEventListener("seeking", () =>
+    videoElement.removeEventListener("seeking", () =>
       updatePlayerState({ isLoading: true })
     );
-    videoElement.addEventListener("seeked", handleLoadingChange);
+    videoElement.removeEventListener("seeked", handleLoadingChange);
+  };
+}, [updatePlayerState]);
 
-    return () => {
-      videoElement.removeEventListener("waiting", () =>
-        updatePlayerState({ isLoading: true })
-      );
-      videoElement.removeEventListener("playing", () =>
-        updatePlayerState({ isLoading: false })
-      );
-      videoElement.removeEventListener("canplay", handleLoadingChange);
-      videoElement.removeEventListener("canplaythrough", handleLoadingChange);
-      videoElement.removeEventListener("progress", handleProgress);
-      videoElement.removeEventListener("stalled", () =>
-        updatePlayerState({ isLoading: true })
-      );
-      videoElement.removeEventListener("seeking", () =>
-        updatePlayerState({ isLoading: true })
-      );
-      videoElement.removeEventListener("seeked", handleLoadingChange);
-    };
-  }, [updatePlayerState]);
-
-  // Volume sync
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.muted = false;
       videoRef.current.volume = playerState.volume;
+
       videoRef.current.addEventListener("loadedmetadata", () => {
         if (videoRef.current) {
           videoRef.current.muted = false;
@@ -322,7 +314,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
   };
 
-  // Volume Controls
+  // --- Volume Controls ---
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);
     updatePlayerState({ volume: newVolume });
@@ -354,10 +346,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const getVolumeIcon = () => {
     if (playerState.volume === 0) return <RiVolumeMuteLine size={24} />;
     if (playerState.volume <= 0.33) return <RiVolumeDownLine size={24} />;
+    if (playerState.volume <= 0.66) return <RiVolumeDownLine size={24} />;
     return <RiVolumeUpLine size={24} />;
   };
 
-  // Playback Speed
+  // --- Playback Speed Controls ---
   const handleSpeedChange = (rate: number) => {
     if (videoRef.current) {
       videoRef.current.playbackRate = rate;
@@ -365,8 +358,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       setShowSettingsMenu(false);
     }
   };
+  // --- End Playback Speed Controls ---
 
-  // Aspect Ratio Classes
   const videoClasses = useMemo(() => {
     const baseClasses = "mx-auto my-auto z-0";
     switch (aspectRatioMode) {
@@ -384,65 +377,34 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
   }, [aspectRatioMode]);
 
-  // Fullscreen with orientation lock
   const toggleFullscreen = () => {
     const playerElement = playerRef.current;
     if (!playerElement) return;
 
     if (!document.fullscreenElement) {
-      playerElement
-        .requestFullscreen()
-        .then(() => {
-          updatePlayerState({ isFullscreen: true });
-
-          // Try to lock orientation to landscape
-          const orientation = screen.orientation as ExtendedScreenOrientation;
-          if (orientation.lock) {
-            orientation
-              .lock("landscape")
-              .then(() => setIsOrientationLocked(true))
-              .catch((err) => console.warn("Orientation lock failed:", err));
-          }
-        })
-        .catch((err) => {
-          console.error(
-            `Error attempting to enable full-screen mode: ${err.message} (${err.name})`
-          );
-        });
-    } else {
-      document.exitFullscreen().then(() => {
-        updatePlayerState({ isFullscreen: false });
-
-        // Unlock orientation if it was locked
-        const orientation = screen.orientation as ExtendedScreenOrientation;
-        if (isOrientationLocked && orientation.unlock) {
-          orientation.unlock();
-          setIsOrientationLocked(false);
-        }
+      playerElement.requestFullscreen().catch((err) => {
+        console.error(
+          `Error attempting to enable full-screen mode: ${err.message} (${err.name})`
+        );
       });
+      updatePlayerState({ isFullscreen: true });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+        updatePlayerState({ isFullscreen: false });
+      }
     }
   };
 
-  // Handle fullscreen change (e.g., user presses ESC)
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      const currentlyFullscreen = !!document.fullscreenElement;
-      updatePlayerState({ isFullscreen: currentlyFullscreen });
+  const handleFullscreenChange = () => {
+    updatePlayerState({ isFullscreen: !!document.fullscreenElement });
+  };
+  document.addEventListener("fullscreenchange", handleFullscreenChange);
+  return () =>
+    document.removeEventListener("fullscreenchange", handleFullscreenChange);
+}, [updatePlayerState]);
 
-      // If exiting fullscreen, unlock orientation
-      const orientation = screen.orientation as ExtendedScreenOrientation;
-      if (!currentlyFullscreen && isOrientationLocked && orientation.unlock) {
-        orientation.unlock();
-        setIsOrientationLocked(false);
-      }
-    };
-
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () =>
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-  }, [isOrientationLocked]);
-
-  // Format time
   const formatTime = (seconds: number) => {
     if (isNaN(seconds) || !isFinite(seconds)) return "0:00";
     const minutes = Math.floor(seconds / 60);
@@ -450,7 +412,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
   };
 
-  // Show loading overlay
   const showLoadingOverlay =
     playerState.isLoading &&
     (playerState.currentTime < 1 || (videoRef.current?.readyState ?? 0) < 3);
@@ -469,7 +430,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       }}
     >
       <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
-        {/* Close Button */}
         <motion.button
           onClick={onClose}
           className="absolute top-4 left-4 z-30 text-white bg-black/50 rounded-full p-2 hover:bg-red-600 transition-all duration-300"
@@ -498,13 +458,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
             ) : (
               <div className="text-white text-xl font-medium text-center bg-black/30 p-4 rounded-md">
                 <h3>{title || "Loading..."}</h3>
+
                 <div className="mt-2 text-sm">Buffering...</div>
               </div>
             )}
           </div>
         )}
 
-        {/* Video Element */}
         <video
           ref={videoRef}
           src={videoSource}
@@ -518,14 +478,17 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
             ) {
               return;
             }
+
             const settingsButton = document.getElementById(
               "video-settings-button"
             );
             if (settingsButton && settingsButton.contains(e.target as Node)) {
               return;
             }
+
             if (showSettingsMenu) {
               setShowSettingsMenu(false);
+
               return;
             }
             togglePlay();
@@ -544,7 +507,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           Your browser does not support the video tag.
         </video>
 
-        {/* Settings Menu */}
         {showSettingsMenu && (
           <motion.div
             ref={settingsMenuRef}
@@ -617,7 +579,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   </div>
                 </div>
               )}
-
               {activeSettingsTab === "Settings" && (
                 <div className="space-y-4">
                   <div>
@@ -642,7 +603,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   </div>
                 </div>
               )}
-
               {activeSettingsTab === "Subtitles" && (
                 <div>
                   <p className="text-green-300 text-sm">#TODO</p>
@@ -652,7 +612,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           </motion.div>
         )}
 
-        {/* Video Controls */}
+        {/* Video Controls Container */}
         <motion.div
           className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 z-20"
           initial={{ y: 20, opacity: 0 }}
@@ -662,16 +622,18 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           }}
           transition={{ duration: 0.3 }}
         >
-          {/* Progress Bar */}
+          {/* Progress bar */}
           <div className="flex items-center mb-3">
             <span className="text-white text-xs mr-2 w-10 text-right">
               {formatTime(playerState.currentTime)}
             </span>
             <div className="relative w-full mx-2 group h-4 flex items-center">
+              {/* Buffer progress bar */}
               <div
-                className="absolute left-0 top-1/2 transform -translate-y-1/2 h-1 bg-gray-500 rounded-full"
+                className="absolute left-0 top-1/2 transform -translate-y-1/2 h-1 bg-gray-500 rounded-full w-full"
                 style={{ width: `${playerState.bufferProgress}%` }}
               />
+              {/* Seek bar */}
               <input
                 type="range"
                 min="0"
@@ -689,7 +651,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
             </span>
           </div>
 
-          {/* Control Buttons */}
+          {/* Control buttons */}
           <div className="flex items-center justify-between">
             {/* Left Controls */}
             <div className="flex items-center space-x-2 sm:space-x-3">
@@ -704,6 +666,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   <RiPlayLargeLine size={28} />
                 )}
               </button>
+
               <button
                 onClick={() => seek(-10)}
                 className="text-white hover:text-gray-300 transition-colors"
@@ -711,6 +674,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
               >
                 <RiReplay10Line size={28} />
               </button>
+
               <button
                 onClick={() => seek(10)}
                 className="text-white hover:text-gray-300 transition-colors"
@@ -718,6 +682,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
               >
                 <RiForward10Line size={28} />
               </button>
+
+              {/* Volume Control */}
               <div className="flex items-center group">
                 <button
                   onClick={toggleMute}
@@ -738,7 +704,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 />
               </div>
             </div>
-
             <div className="flex-grow text-center px-2 sm:px-4 overflow-hidden">
               <h3 className="text-white text-sm sm:text-base font-medium truncate">
                 {title || ""}
@@ -753,31 +718,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 </div>
               )}
 
-              {/* VLC Button with Custom SVG */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const confirmed = window.confirm(
-                    "This will open the video in VLC Media Player. Make sure it's installed."
-                  );
-                  if (confirmed) {
-                    window.location.href = `vlc://${videoSource}`;
-                  }
-                }}
-                className="text-white hover:text-green-400 transition-colors flex items-center justify-center"
-                aria-label="Play in VLC"
-                title="Play in VLC"
-              >
-                <Image
-                  src="https://icongr.am/entypo/traffic-cone.svg?size=114&color=ffffff"
-                  alt="VLC Icon"
-                  width={24}
-                  height={24}
-                  unoptimized
-                />
-              </button>
-
-              {/* Settings Button */}
               <div className="relative">
                 <button
                   id="video-settings-button"
@@ -794,8 +734,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   <RiSettingsLine size={24} />
                 </button>
               </div>
-
-              {/* Fullscreen Button */}
               <div className="relative">
                 <button
                   onClick={toggleFullscreen}
