@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { FaGithub, FaTelegram, FaWhatsapp, FaInstagram } from 'react-icons/fa';
+import { FaTelegram, FaWhatsapp, FaInstagram } from 'react-icons/fa';
 import { NEXT_PUBLIC_SITE_NAME, NEXT_PUBLIC_FOOTER_DESC, NEXT_PUBLIC_TELEGRAM_CONTACT, NEXT_PUBLIC_WHATSAPP_CONTACT, NEXT_PUBLIC_INSTAGRAM_CONTACT } from '@/config';
 
 const Footer: React.FC = () => {
