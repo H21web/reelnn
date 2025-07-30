@@ -380,69 +380,49 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
   // Fullscreen with orientation lock
   const toggleFullscreen = () => {
-    const playerElement = playerRef.current;
-    if (!playerElement) return;
+  const playerElement = playerRef.current;
+  if (!playerElement) return;
 
-    if (!document.fullscreenElement) {
-      playerElement
-        .requestFullscreen()
-        .then(() => {
-          updatePlayerState({ isFullscreen: true });
+  if (!document.fullscreenElement) {
+    playerElement
+      .requestFullscreen()
+      .then(() => {
+        updatePlayerState({ isFullscreen: true });
 
-          // Try to lock orientation to landscape
-          if (screen.orientation && screen.orientation.lock) {
-            screen.orientation
+        // Try to lock orientation to landscape
+        if (screen.orientation) {
+          const orientation = screen.orientation as ScreenOrientation & {
+            lock?: (orientation: "landscape") => Promise<void>;
+          };
+          if (orientation.lock) {
+            orientation
               .lock("landscape")
               .then(() => setIsOrientationLocked(true))
-              .catch((err) =>
-                console.warn("Orientation lock failed:", err)
-              );
+              .catch((err) => console.warn("Orientation lock failed:", err));
           }
-        })
-        .catch((err) => {
-          console.error(
-            `Error attempting to enable full-screen mode: ${err.message} (${err.name})`
-          );
-        });
-    } else {
-      document.exitFullscreen().then(() => {
-        updatePlayerState({ isFullscreen: false });
-
-        // Unlock orientation if it was locked
-        if (
-          isOrientationLocked &&
-          screen.orientation &&
-          screen.orientation.unlock
-        ) {
-          screen.orientation.unlock();
-          setIsOrientationLocked(false);
         }
+      })
+      .catch((err) => {
+        console.error(
+          `Error attempting to enable full-screen mode: ${err.message} (${err.name})`
+        );
       });
-    }
-  };
+  } else {
+    document.exitFullscreen().then(() => {
+      updatePlayerState({ isFullscreen: false });
 
-  // Handle fullscreen change (e.g., user presses ESC)
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      const currentlyFullscreen = !!document.fullscreenElement;
-      updatePlayerState({ isFullscreen: currentlyFullscreen });
-
-      // If exiting fullscreen, unlock orientation
+      // Unlock orientation if it was locked
       if (
-        !currentlyFullscreen &&
         isOrientationLocked &&
         screen.orientation &&
-        screen.orientation.unlock
+        'unlock' in screen.orientation
       ) {
-        screen.orientation.unlock();
+        (screen.orientation as any).unlock?.();
         setIsOrientationLocked(false);
       }
-    };
-
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () =>
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-  }, [isOrientationLocked]);
+    });
+  }
+};
 
   // Format time
   const formatTime = (seconds: number) => {
