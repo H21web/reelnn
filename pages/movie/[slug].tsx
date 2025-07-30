@@ -100,12 +100,11 @@ const Slug = () => {
     setShowQualityModal(true);
   };
 
-  const handleQualitySelect = (index) => {
+  const handleQualitySelect = (index: number) => {
     setSelectedQualityIndex(index);
     setShowQualityModal(false);
     setShowVideoPlayer(true);
   };
-
   const handleCloseVideoPlayer = () => {
     setShowVideoPlayer(false);
   };
