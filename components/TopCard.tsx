@@ -272,13 +272,13 @@ const TopCard: React.FC<MovieDetailsProps> = ({
           <div className="mb-4 sm:mb-6 text-xs sm:text-sm text-gray-400">
             <div className="flex flex-col sm:flex-row sm:space-x-6 space-y-1 sm:space-y-0">
               <div className="relative">
-                {/* Quality selector button - highlighted */}
+                {/* Quality selector button - highlighted with white font */}
                 <button
                   onClick={() => setShowQualityOptions(!showQualityOptions)}
                   className="flex items-center hover:text-white transition-colors group"
                 >
                   <span className="font-semibold mr-2 text-white">Quality:</span>
-                  <span className="bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1 rounded-full text-sm font-medium shadow-lg">
+                  <span className="bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1 rounded-full text-sm font-medium shadow-lg text-white">
                     {qualityInfo.quality}
                   </span>
                   {quality && quality.length > 1 && (
