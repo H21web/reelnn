@@ -81,13 +81,14 @@ const Slug = () => {
         setLoading(true);
         const response = await fetch(`/api/getMovieDetails?mid=${slug}`);
         if (response.ok) {
-          setMovieData(await response.json());
+          const data = await response.json();
+          setMovieData(data);
         } else {
           throw new Error(`API responded with status: ${response.status}`);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error fetching movie details:", err);
-        setError("Failed to fetch movie details");
+        setError(err.message || "Failed to fetch movie details");
       } finally {
         setLoading(false);
       }
