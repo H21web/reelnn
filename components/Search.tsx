@@ -1,116 +1,145 @@
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useCallback, forwardRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { debounce } from "lodash";
 
-export interface content {
-  id: string;
+interface SearchResult {
+  id: number;
   title: string;
   year: number;
-  poster: string;
+  poster: string | null;
   vote_average: number;
+  vote_count: number;
   media_type: string;
 }
 
-interface contentCardProps {
-  content: content;
+interface SearchProps {
+  isVisible: boolean;
+  searchQuery: string;
 }
 
-export const Card: React.FC<contentCardProps> = ({ content }) => {
-  const [isHovered, setIsHovered] = useState(false);
+const DEBOUNCE_MS = 300;
 
-  return (
-    <motion.div
-      className="relative overflow-hidden rounded-lg shadow-lg cursor-pointer w-full"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onFocus={() => setIsHovered(true)}
-      onBlur={() => setIsHovered(false)}
-      tabIndex={0}
-      aria-label={`${content.title} (${content.year})`}
-      role="button"
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-    >
-      <div className="relative aspect-[2/3] w-full overflow-hidden">
-        <motion.div
-          className="font-mont w-full h-full"
-          animate={{
-            scale: isHovered ? 1.2 : 1,
-          }}
-          transition={{
-            duration: 0.2,
-            ease: "easeOut",
-          }}
-        >
-          <Image
-            src={`https://image.tmdb.org/t/p/w500${content.poster}`}
-            alt={content.title}
-            fill
-            sizes="(max-width: 640px) 150px, (max-width: 768px) 180px, 200px"
-            className="rounded-lg object-cover"
-            loading="lazy"
-            unoptimized
-          />
-        </motion.div>
+const Search = forwardRef<HTMLDivElement, SearchProps>(
+  ({ isVisible, searchQuery }, ref) => {
+    const [results, setResults] = useState<SearchResult[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 to-transparent pointer-events-none" />
+    // Debounced search function
+    const handleSearch = useCallback(
+      debounce(async (query: string) => {
+        if (query.length < 3) {
+          setResults([]);
+          setIsLoading(false);
+          return;
+        }
 
-        <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/50 rounded px-1.5 py-0.5 sm:px-2 sm:py-1 pointer-events-none">
-          <svg
-            className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-          </svg>
-          <span className="text-white text-xs font-medium">
-            {content.vote_average.toFixed(1)}
-          </span>
-        </div>
+        setIsLoading(true);
+        setError(null);
 
-        <div className="absolute top-2 right-2 bg-black/50 text-white text-[10px] sm:text-xs font-medium rounded px-1.5 py-0.5 sm:px-2 sm:py-1 pointer-events-none">
-          {content.year}
-        </div>
+        try {
+          const res = await fetch(`/api/handle_search?query=${encodeURIComponent(query)}`);
+          if (!res.ok) throw new Error("Network response was not ok");
 
-        <AnimatePresence mode="wait">
-          {isHovered && (
-            <>
-              <motion.div
-                className="absolute inset-0 flex items-center justify-center z-10"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
+          const data: SearchResult[] = await res.json();
+          setResults(data);
+        } catch (err) {
+          console.error("Search error:", err);
+          setError("An error occurred while searching. Please try again.");
+          setResults([]);
+        } finally {
+          setIsLoading(false);
+        }
+      }, DEBOUNCE_MS),
+      []
+    );
+
+    // Trigger search when query or visibility changes
+    useEffect(() => {
+      if (isVisible && searchQuery.length >= 1) {
+        handleSearch(searchQuery);
+      } else if (!isVisible || searchQuery.length === 0) {
+        setResults([]);
+      }
+
+      // Cleanup debounce on unmount
+      return () => {
+        handleSearch.cancel();
+      };
+    }, [searchQuery, isVisible, handleSearch]);
+
+    if (!isVisible) return null;
+
+    return (
+      <div
+        ref={ref}
+        className="font-mont fixed top-16 sm:right-4 right-0 w-full sm:w-[320px] max-h-[60vh] sm:max-h-[70vh] overflow-y-auto bg-gray-900 rounded-b-lg shadow-lg z-40"
+        data-testid="search-results-container"
+      >
+        {searchQuery.length < 3 ? (
+          <p className="text-gray-400 text-center py-4 sm:py-8 text-sm sm:text-base">
+            Type at least 3 characters to search
+          </p>
+        ) : isLoading ? (
+          <div className="flex justify-center py-4 sm:py-8">
+            <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-t-2 border-b-2 border-white"></div>
+          </div>
+        ) : error ? (
+          <p className="text-red-500 text-center py-4 sm:py-8 text-sm sm:text-base">
+            {error}
+          </p>
+        ) : results.length === 0 ? (
+          <p className="text-gray-400 text-center py-4 sm:py-8 text-sm sm:text-base">
+            No results found
+          </p>
+        ) : (
+          <div className="divide-y divide-gray-700">
+            {results.map((item) => (
+              <Link
+                href={`/${item.media_type}/${item.id}`}
+                key={`${item.media_type}-${item.id}`}
+                className="block hover:bg-gray-800 transition-colors"
               >
-                <div className="bg-red-500/80 hover:bg-red-600 rounded-full p-2 sm:p-3 transition-colors">
-                  <svg
-                    className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
+                <div className="flex p-2 sm:p-3">
+                  <div className="w-12 h-18 sm:w-16 sm:h-24 flex-shrink-0 relative rounded overflow-hidden bg-gray-800">
+                    {item.poster ? (
+                      <Image
+                        src={`https://image.tmdb.org/t/p/w500${item.poster}`} // ✅ Fixed: Removed extra spaces
+                        alt={item.title}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 48px, 64px"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-xs text-gray-500">
+                        No Image
+                      </div>
+                    )}
+                  </div>
+                  <div className="ml-2 sm:ml-3 flex-grow">
+                    <p className="font-medium text-xs sm:text-sm truncate">
+                      {item.title}
+                    </p>
+                    <div className="flex items-center text-xs text-gray-400 mt-0.5 sm:mt-1">
+                      <span>{item.year}</span>
+                      <span className="mx-1 sm:mx-2">•</span>
+                      <span className="flex items-center">⭐ {item.vote_average.toFixed(1)}</span>
+                    </div>
+                    <span className="inline-block mt-1 sm:mt-2 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 bg-gray-700 rounded-full">
+                      {item.media_type === "movie" ? "Movie" : "TV Show"}
+                    </span>
+                  </div>
                 </div>
-              </motion.div>
-
-              <motion.div
-                className="absolute bottom-0 left-0 right-0 bg-black/70 p-1.5 sm:p-2 text-white z-10"
-                initial={{ y: 100 }}
-                animate={{ y: 0 }}
-                exit={{ y: 100 }}
-                transition={{ duration: 0.2 }}
-              >
-                <h3 className="text-xs sm:text-sm font-medium truncate">
-                  {content.title}
-                </h3>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
-    </motion.div>
-  );
-};
+    );
+  }
+);
+
+Search.displayName = "Search";
+export default Search;
