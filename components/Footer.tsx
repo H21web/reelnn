@@ -40,8 +40,8 @@ const Footer: React.FC = () => {
                 </div>
                 <div className="text-sm mt-2">
                     © {new Date().getFullYear()} {NEXT_PUBLIC_SITE_NAME} 
-                    <Link href="https://github.com/rafsanbasunia/reelnn" target="_blank" rel="noopener noreferrer" className="ml-1 underline inline-flex items-center">
-                        <FaGithub className="mr-1" aria-hidden="true" />Made with ❤️
+                    <Link href="#" target="_blank" rel="noopener noreferrer" className="ml-1 underline inline-flex items-center">
+                
                     </Link>
                 </div>
             </div>
