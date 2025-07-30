@@ -66,7 +66,6 @@ const Slug = () => {
   const [error, setError] = useState("");
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const [selectedQualityIndex, setSelectedQualityIndex] = useState(0);
-
   const { streamUrl } = useStreamToken({
     contentId: movieData?.id || 0,
     mediaType: "movie",
@@ -77,11 +76,9 @@ const Slug = () => {
   useEffect(() => {
     const fetchMovieDetails = async () => {
       if (!slug) return;
-
       try {
         setLoading(true);
         const response = await fetch(`/api/getMovieDetails?mid=${slug}`);
-
         if (response.ok) {
           setMovieData(await response.json());
         } else {
@@ -94,7 +91,6 @@ const Slug = () => {
         setLoading(false);
       }
     };
-
     fetchMovieDetails();
   }, [slug]);
 
@@ -102,6 +98,7 @@ const Slug = () => {
     setSelectedQualityIndex(qualityIndex);
     setShowVideoPlayer(true);
   };
+
   const handleCloseVideoPlayer = () => {
     setShowVideoPlayer(false);
   };
@@ -111,14 +108,12 @@ const Slug = () => {
     <div className="min-h-screen">
       {/* Fixed background placeholder */}
       <div className="fixed top-0 left-0 w-full h-screen z-0 bg-black"></div>
-
       {/* Page content container */}
       <div className={styles.container}>
         {/* Back button placeholder */}
         <div className="py-6 max-w-6xl mx-auto space-y-12">
           <div className={`${styles.skeletonBlock} h-8 w-20`}></div>
         </div>
-
         {/* All content container */}
         <div className={styles.innerContainer}>
           {/* TopCard Skeleton */}
@@ -142,7 +137,6 @@ const Slug = () => {
               </div>
             </div>
           </section>
-
           {/* Cast & Crew Skeleton */}
           <section className="text-white">
             <div
@@ -162,7 +156,6 @@ const Slug = () => {
               ))}
             </div>
           </section>
-
           {/* About Skeleton */}
           <section className="text-white">
             <div
@@ -175,7 +168,6 @@ const Slug = () => {
               <div className={`${styles.skeletonBlock} h-4 w-2/5`}></div>
             </div>
           </section>
-
           {/* Similar Skeleton */}
           <section className="text-white">
             <div className={`${styles.skeletonBlock} h-8 w-1/5 mb-4`}></div>
@@ -254,14 +246,12 @@ const Slug = () => {
         />
         <div className="absolute inset-0 bg-black/90"></div>
       </div>
-
       {/* Page content */}
       <div className={styles.container}>
         {/* Back button */}
         <div className="py-6 max-w-6xl mx-auto ">
           <Backward />
         </div>
-
         {/* All content */}
         <div className={styles.innerContainer}>
           <ContentSection>
@@ -314,10 +304,60 @@ const Slug = () => {
             />
           </ContentSection>
 
+          {/* Enhanced Quality Selection Section */}
+          <ContentSection title="Video Quality">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {movieData.quality.map((quality, index) => (
+                <button
+                  key={index}
+                  onClick={() => handlePlayClick(index)}
+                  className={`
+                    p-5 rounded-xl font-semibold text-left transition-all duration-300 transform hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-4
+                    ${
+                      index === selectedQualityIndex
+                        ? "bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white shadow-lg ring-indigo-500"
+                        : "bg-gray-800/80 text-gray-200 hover:bg-gray-700/90 backdrop-blur-sm"
+                    }
+                    border border-gray-600 hover:border-gray-500
+                  `}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-bold uppercase tracking-wide opacity-90">
+                      {quality.type}
+                    </span>
+                    <span
+                      className={`
+                        text-xs px-2 py-1 rounded-full
+                        ${
+                          index === selectedQualityIndex
+                            ? "bg-white/30"
+                            : "bg-gray-700"
+                        }
+                      `}
+                    >
+                      {quality.size}
+                    </span>
+                  </div>
+                  <div className="text-xs opacity-80 flex items-center gap-2">
+                    🔊 {quality.audio}
+                  </div>
+                  <div className="text-xs opacity-70 flex items-center gap-2 mt-1">
+                    🏷️ {quality.subtitle || "No Subtitles"}
+                  </div>
+                  <div className="text-xs opacity-60 mt-2">
+                    {quality.video_codec} • {quality.file_type.toUpperCase()}
+                  </div>
+                </button>
+              ))}
+            </div>
+            <p className="text-gray-400 text-sm mt-3 italic">
+              Click any quality option to start streaming instantly.
+            </p>
+          </ContentSection>
+
           <ContentSection title="Cast & Crew">
             <CastCrew castMembers={movieData.cast} />
           </ContentSection>
-
           <ContentSection title="About">
             <AboutCard
               genres={movieData.genres || []}
@@ -330,13 +370,11 @@ const Slug = () => {
               }
             />
           </ContentSection>
-
           <ContentSection title="Similar Titles">
             <Similar mediaType="movie" genres={movieData.genres || []} />
           </ContentSection>
         </div>
       </div>
-
       {/* Video Player  */}
       <AnimatePresence>
         {showVideoPlayer && streamUrl && (
