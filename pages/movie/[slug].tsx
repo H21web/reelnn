@@ -60,7 +60,13 @@ const styles = {
 
 const Slug = () => {
   const router = useRouter();
-  const { slug } = router.query;
+  const slug =
+    typeof router.query.slug === "string"
+      ? router.query.slug
+      : Array.isArray(router.query.slug)
+      ? router.query.slug[0]
+      : "";
+
   const [movieData, setMovieData] = useState<MovieData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -76,7 +82,7 @@ const Slug = () => {
 
   useEffect(() => {
     const fetchMovieDetails = async () => {
-      if (!slug) return;
+      if (!slug || typeof slug !== "string") return;
       try {
         setLoading(true);
         const response = await fetch(`/api/getMovieDetails?mid=${slug}`);
@@ -93,98 +99,76 @@ const Slug = () => {
         setLoading(false);
       }
     };
+
     fetchMovieDetails();
   }, [slug]);
 
-  const handlePlayClick = () => {
-    setShowQualityModal(true);
-  };
-
+  const handlePlayClick = () => setShowQualityModal(true);
   const handleQualitySelect = (index: number) => {
     setSelectedQualityIndex(index);
     setShowQualityModal(false);
     setShowVideoPlayer(true);
   };
+  const handleCloseVideoPlayer = () => setShowVideoPlayer(false);
+  const handleCloseModal = () => setShowQualityModal(false);
 
-  const handleCloseVideoPlayer = () => {
-    setShowVideoPlayer(false);
-  };
-
-  const handleCloseModal = () => {
-    setShowQualityModal(false);
-  };
-
-  // Skeleton Loader Component
   const SkeletonLoader = () => (
     <div className="min-h-screen">
-      {/* Fixed background placeholder */}
-      <div className="fixed top-0 left-0 w-full h-screen z-0 bg-black"></div>
-      {/* Page content container */}
+      <div className="fixed top-0 left-0 w-full h-screen z-0 bg-black" />
       <div className={styles.container}>
-        {/* Back button placeholder */}
         <div className="py-6 max-w-6xl mx-auto space-y-12">
-          <div className={`${styles.skeletonBlock} h-8 w-20`}></div>
+          <div className={`${styles.skeletonBlock} h-8 w-20`} />
         </div>
-        {/* All content container */}
         <div className={styles.innerContainer}>
-          {/* TopCard Skeleton */}
           <section className="text-white">
             <div className="flex flex-col md:flex-row gap-8">
               <div className="md:w-1/3 lg:w-1/4">
-                <div className="aspect-[2/3] bg-gray-800 rounded-lg"></div>
+                <div className="aspect-[2/3] bg-gray-800 rounded-lg" />
               </div>
               <div className="md:w-2/3 lg:w-3/4 space-y-4">
-                <div className={`${styles.skeletonBlock} h-10 w-3/4`}></div>
-                <div className={`${styles.skeletonBlock} h-6 w-1/2`}></div>
-                <div className={`${styles.skeletonBlock} h-4 w-full`}></div>
-                <div className={`${styles.skeletonBlock} h-4 w-full`}></div>
-                <div className={`${styles.skeletonBlock} h-4 w-3/4`}></div>
+                <div className={`${styles.skeletonBlock} h-10 w-3/4`} />
+                <div className={`${styles.skeletonBlock} h-6 w-1/2`} />
+                <div className={`${styles.skeletonBlock} h-4 w-full`} />
+                <div className={`${styles.skeletonBlock} h-4 w-full`} />
+                <div className={`${styles.skeletonBlock} h-4 w-3/4`} />
                 <div className="flex space-x-4 mt-4">
-                  <div className={`${styles.skeletonBlock} h-10 w-24`}></div>
+                  <div className={`${styles.skeletonBlock} h-10 w-24`} />
                   <div
                     className={`${styles.skeletonBlock} h-10 w-10 rounded-full`}
-                  ></div>
+                  />
                 </div>
               </div>
             </div>
           </section>
-          {/* Cast & Crew Skeleton */}
+
           <section className="text-white">
-            <div
-              className={`${styles.skeletonBlock} h-8 w-1/5 mb-4 sm:mb-8`}
-            ></div>
+            <div className={`${styles.skeletonBlock} h-8 w-1/5 mb-4 sm:mb-8`} />
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="space-y-2">
-                  <div className="aspect-square bg-gray-800 rounded-full"></div>
-                  <div
-                    className={`${styles.skeletonBlock} h-4 w-3/4 mx-auto`}
-                  ></div>
-                  <div
-                    className={`${styles.skeletonBlock} h-3 w-1/2 mx-auto`}
-                  ></div>
+                  <div className="aspect-square bg-gray-800 rounded-full" />
+                  <div className={`${styles.skeletonBlock} h-4 w-3/4 mx-auto`} />
+                  <div className={`${styles.skeletonBlock} h-3 w-1/2 mx-auto`} />
                 </div>
               ))}
             </div>
           </section>
-          {/* About Skeleton */}
+
           <section className="text-white">
-            <div
-              className={`${styles.skeletonBlock} h-8 w-1/6 mb-4 sm:mb-2`}
-            ></div>
+            <div className={`${styles.skeletonBlock} h-8 w-1/6 mb-4 sm:mb-2`} />
             <div className="space-y-3 p-4 bg-gray-800 rounded">
-              <div className={`${styles.skeletonBlock} h-4 w-1/3`}></div>
-              <div className={`${styles.skeletonBlock} h-4 w-1/2`}></div>
-              <div className={`${styles.skeletonBlock} h-4 w-1/4`}></div>
-              <div className={`${styles.skeletonBlock} h-4 w-2/5`}></div>
+              <div className={`${styles.skeletonBlock} h-4 w-1/3`} />
+              <div className={`${styles.skeletonBlock} h-4 w-1/2`} />
+              <div className={`${styles.skeletonBlock} h-4 w-1/4`} />
+              <div className={`${styles.skeletonBlock} h-4 w-2/5`} />
             </div>
           </section>
-          {/* Similar Skeleton */}
+
           <section className="text-white">
-            <div className={`${styles.skeletonBlock} h-8 w-1/5 mb-4`}></div>
+            <div className={`${styles.skeletonBlock} h-8 w-1/5 mb-4`} />
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="aspect-[2/3] bg-gray-800 rounded"></div>
+                <div key={i} className="aspect-[2/3] bg-gray-800 rounded" />
               ))}
             </div>
           </section>
@@ -193,33 +177,27 @@ const Slug = () => {
     </div>
   );
 
-  if (loading) {
-    return <SkeletonLoader />;
-  }
-
-  if (error || !movieData) {
+  if (loading) return <SkeletonLoader />;
+  if (error || !movieData)
     return (
       <div className="min-h-screen flex items-center justify-center text-white">
         Error: {error || "Movie not found"}
       </div>
     );
-  }
 
   const year = movieData.release_date
     ? new Date(movieData.release_date).getFullYear()
     : 2025;
 
-  interface ContentSectionProps {
-    title?: string;
-    children: React.ReactNode;
-    className?: string;
-  }
-
   const ContentSection = ({
     title,
     children,
     className = "",
-  }: ContentSectionProps) => (
+  }: {
+    title?: string;
+    children: React.ReactNode;
+    className?: string;
+  }) => (
     <section className={`text-white ${className}`}>
       {title && <h2 className={styles.sectionHeading}>{title}</h2>}
       {children}
@@ -229,9 +207,7 @@ const Slug = () => {
   return (
     <div className="font-mont min-h-screen relative">
       <Head>
-        <title>
-          {movieData.title} | {NEXT_PUBLIC_SITE_NAME}
-        </title>
+        <title>{movieData.title} | {NEXT_PUBLIC_SITE_NAME}</title>
         <meta
           name="description"
           content={
@@ -240,7 +216,7 @@ const Slug = () => {
           }
         />
       </Head>
-      {/* Background Image */}
+
       <div className="fixed top-0 left-0 w-full h-screen z-0">
         <Image
           src={
@@ -255,15 +231,14 @@ const Slug = () => {
           priority
           unoptimized
         />
-        <div className="absolute inset-0 bg-black/90"></div>
+        <div className="absolute inset-0 bg-black/90" />
       </div>
-      {/* Page content */}
+
       <div className={styles.container}>
-        {/* Back button */}
-        <div className="py-6 max-w-6xl mx-auto ">
+        <div className="py-6 max-w-6xl mx-auto">
           <Backward />
         </div>
-        {/* All content */}
+
         <div className={styles.innerContainer}>
           <ContentSection>
             <TopCard
@@ -275,31 +250,17 @@ const Slug = () => {
               quality={movieData.quality}
               genres={movieData.genres || []}
               size={
-                movieData.quality && movieData.quality.length > 0
-                  ? `${movieData.quality[0].size}`
-                  : "N/A"
+                movieData.quality?.[0]?.size || "N/A"
               }
               poster={
                 movieData.poster_path
                   ? `https://image.tmdb.org/t/p/w500${movieData.poster_path}`
                   : ""
               }
-              videoQuality={
-                movieData.quality && movieData.quality.length > 0
-                  ? `${movieData.quality[0].type}`
-                  : "N/A"
-              }
+              videoQuality={movieData.quality?.[0]?.type || "N/A"}
               onPlayClick={handlePlayClick}
-              audioQuality={
-                movieData.quality && movieData.quality.length > 0
-                  ? `${movieData.quality[0].audio}`
-                  : "English AAC 5.1 (Default)"
-              }
-              subtitles={
-                movieData.quality && movieData.quality.length > 0
-                  ? `${movieData.quality[0].subtitle}`
-                  : "English (Default SUBRIP)"
-              }
+              audioQuality={movieData.quality?.[0]?.audio || "English AAC 5.1"}
+              subtitles={movieData.quality?.[0]?.subtitle || "English"}
               description={movieData.overview || ""}
               director={movieData.directors}
               isFavorite={false}
@@ -314,28 +275,31 @@ const Slug = () => {
               streamUrl={streamUrl ?? undefined}
             />
           </ContentSection>
+
           <ContentSection title="Cast & Crew">
             <CastCrew castMembers={movieData.cast} />
           </ContentSection>
+
           <ContentSection title="About">
             <AboutCard
               genres={movieData.genres || []}
               studios={movieData.studios || []}
               links={movieData.links || []}
               mediaInfo={
-                movieData.quality && movieData.quality.length > 0
+                movieData.quality?.[0]
                   ? `${movieData.quality[0].type}-${movieData.quality[0].video_codec}-${movieData.quality[0].file_type}`
                   : ""
               }
             />
           </ContentSection>
+
           <ContentSection title="Similar Titles">
             <Similar mediaType="movie" genres={movieData.genres || []} />
           </ContentSection>
         </div>
       </div>
 
-      {/* Quality Selection Modal */}
+      {/* Modal and VideoPlayer */}
       <AnimatePresence>
         {showQualityModal && movieData && (
           <motion.div
@@ -348,7 +312,7 @@ const Slug = () => {
             <div
               className="absolute inset-0 bg-black/70 backdrop-blur-sm"
               onClick={handleCloseModal}
-            ></div>
+            />
             <motion.div
               initial={{ y: 20, opacity: 0, scale: 0.95 }}
               animate={{ y: 0, opacity: 1, scale: 1 }}
@@ -427,7 +391,6 @@ const Slug = () => {
         )}
       </AnimatePresence>
 
-      {/* Video Player */}
       <AnimatePresence>
         {showVideoPlayer && streamUrl && (
           <VideoPlayer
