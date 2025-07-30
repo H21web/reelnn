@@ -67,7 +67,6 @@ const TrailerModal: React.FC<TrailerModalProps> = ({
     const match = url.match(regExp);
     return match && match[2].length === 11 ? match[2] : null;
   };
-
   const videoId = getYoutubeVideoId(trailerUrl);
   const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : "";
 
@@ -157,7 +156,6 @@ const TopCard: React.FC<MovieDetailsProps> = ({
       qualityArray && qualityArray.length > 0
         ? qualityArray[selectedIndex]
         : null;
-
     return {
       quality: selected?.type || "N/A",
       size: selected?.size || "N/A",
@@ -274,18 +272,21 @@ const TopCard: React.FC<MovieDetailsProps> = ({
           <div className="mb-4 sm:mb-6 text-xs sm:text-sm text-gray-400">
             <div className="flex flex-col sm:flex-row sm:space-x-6 space-y-1 sm:space-y-0">
               <div className="relative">
+                {/* Quality selector button - highlighted */}
                 <button
                   onClick={() => setShowQualityOptions(!showQualityOptions)}
-                  className="flex items-center hover:text-white transition-colors"
+                  className="flex items-center hover:text-white transition-colors group"
                 >
-                  <span className="font-semibold mr-2">Quality:</span>
-                  <span>{qualityInfo.quality}</span>
+                  <span className="font-semibold mr-2 text-white">Quality:</span>
+                  <span className="bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1 rounded-full text-sm font-medium shadow-lg">
+                    {qualityInfo.quality}
+                  </span>
                   {quality && quality.length > 1 && (
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       viewBox="0 0 20 20"
                       fill="currentColor"
-                      className={`w-4 h-4 ml-1 transition-transform duration-200 ${
+                      className={`w-4 h-4 ml-2 transition-transform duration-200 text-purple-400 group-hover:text-purple-300 ${
                         showQualityOptions ? "rotate-180" : ""
                       }`}
                     >
@@ -303,20 +304,24 @@ const TopCard: React.FC<MovieDetailsProps> = ({
                   <motion.div
                     initial={{ opacity: 0, y: -5 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="absolute z-10 mt-1 bg-gray-800 rounded-md shadow-lg border border-gray-700 w-48"
+                    className="absolute z-10 mt-2 bg-gray-800 rounded-md shadow-lg border border-gray-700 w-64 max-h-60 overflow-y-auto hide-scrollbar"
                   >
                     {quality.map((q, idx) => (
                       <div
                         key={idx}
-                        className="px-3 py-2 hover:bg-gray-700 cursor-pointer text-sm text-gray-200 border-b border-gray-700 last:border-0"
+                        className={`px-4 py-3 cursor-pointer border-b border-gray-700 last:border-0 transition-colors ${
+                          idx === selectedQuality
+                            ? "bg-purple-600/30 text-white"
+                            : "hover:bg-gray-700 text-gray-200"
+                        }`}
                         onClick={() => {
                           setSelectedQuality(idx);
                           setShowQualityOptions(false);
                         }}
                       >
-                        <div className="flex justify-between">
-                          <span>{q.type || "Unknown"}</span>
-                          <span className="text-gray-400">{q.size || ""}</span>
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium">{q.type || "Unknown"}</span>
+                          <span className="text-purple-400 text-sm">{q.size || ""}</span>
                         </div>
                         <div className="flex gap-2 text-xs text-gray-400 mt-1">
                           {q.audio && <span>{q.audio}</span>}
@@ -324,11 +329,26 @@ const TopCard: React.FC<MovieDetailsProps> = ({
                             <span className="ml-auto">{q.video_codec}</span>
                           )}
                         </div>
+                        {idx === selectedQuality && (
+                          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="currentColor"
+                              viewBox="0 0 24 24"
+                              width="16"
+                              height="16"
+                              className="text-purple-400"
+                            >
+                              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                            </svg>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </motion.div>
                 )}
               </div>
+
               <div>
                 <span className="font-semibold mr-2">Size:</span>
                 <span>{qualityInfo.size}</span>
@@ -342,6 +362,17 @@ const TopCard: React.FC<MovieDetailsProps> = ({
                 <span>{qualityInfo.subtitle}</span>
               </div>
             </div>
+
+            {/* Hide scrollbar globally */}
+            <style jsx>{`
+              .hide-scrollbar {
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+              }
+              .hide-scrollbar::-webkit-scrollbar {
+                display: none;
+              }
+            `}</style>
           </div>
 
           {/* Action Buttons grid layout */}
@@ -354,7 +385,6 @@ const TopCard: React.FC<MovieDetailsProps> = ({
             >
               <FaPlay className="mr-2" /> Play
             </motion.button>
-
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -374,7 +404,6 @@ const TopCard: React.FC<MovieDetailsProps> = ({
               >
                 {watched ? <FaCheck /> : <FaCheck className="text-gray-400" />}
               </motion.button>
-
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -398,14 +427,6 @@ const TopCard: React.FC<MovieDetailsProps> = ({
               >
                 <FaDownload />
               </motion.button>
-
-              {/* <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-full"
-              >
-                <FaEllipsisH />
-              </motion.button> */}
             </div>
           </div>
 
@@ -421,6 +442,7 @@ const TopCard: React.FC<MovieDetailsProps> = ({
           </div>
         </div>
       </div>
+
       {/* Trailer Modal */}
       <TrailerModal
         isOpen={trailerOpen}
