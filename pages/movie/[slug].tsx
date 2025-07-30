@@ -11,7 +11,6 @@ import { useStreamToken } from "@/hooks/useStreamToken";
 import Image from "next/image";
 import Head from "next/head";
 import { NEXT_PUBLIC_SITE_NAME } from "@/config";
-
 interface MovieQuality {
   type: string;
   fileid: string;
@@ -21,7 +20,6 @@ interface MovieQuality {
   video_codec: string;
   file_type: string;
 }
-
 interface MovieData {
   id: number;
   title: string;
@@ -44,20 +42,17 @@ interface MovieData {
   studios: string[];
   links: string[];
 }
-
 interface CastMember {
   name: string;
   character: string;
   imageUrl: string;
 }
-
 const styles = {
   container: "relative z-10 px-8 sm:px-6 md:px-8 lg:px-12 pb-16 md:pb-20",
   innerContainer: "max-w-6xl mx-auto space-y-12",
   sectionHeading: "text-xl sm:text-2xl font-bold mb-4 sm:mb-8 text-white",
   skeletonBlock: "bg-gray-800 rounded animate-pulse",
 };
-
 const Slug = () => {
   const router = useRouter();
   const { slug } = router.query;
@@ -72,7 +67,6 @@ const Slug = () => {
     qualityIndex: selectedQualityIndex,
     isActive: true,
   });
-
   useEffect(() => {
     const fetchMovieDetails = async () => {
       if (!slug) return;
@@ -93,16 +87,13 @@ const Slug = () => {
     };
     fetchMovieDetails();
   }, [slug]);
-
   const handlePlayClick = (qualityIndex = 0) => {
     setSelectedQualityIndex(qualityIndex);
     setShowVideoPlayer(true);
   };
-
   const handleCloseVideoPlayer = () => {
     setShowVideoPlayer(false);
   };
-
   // Skeleton Loader Component
   const SkeletonLoader = () => (
     <div className="min-h-screen">
@@ -181,11 +172,9 @@ const Slug = () => {
       </div>
     </div>
   );
-
   if (loading) {
     return <SkeletonLoader />;
   }
-
   if (error || !movieData) {
     return (
       <div className="min-h-screen flex items-center justify-center text-white">
@@ -193,17 +182,14 @@ const Slug = () => {
       </div>
     );
   }
-
   const year = movieData.release_date
     ? new Date(movieData.release_date).getFullYear()
     : 2025;
-
   interface ContentSectionProps {
     title?: string;
     children: React.ReactNode;
     className?: string;
   }
-
   const ContentSection = ({
     title,
     children,
@@ -214,7 +200,6 @@ const Slug = () => {
       {children}
     </section>
   );
-
   return (
     <div className="font-mont min-h-screen relative">
       <Head>
@@ -304,54 +289,32 @@ const Slug = () => {
             />
           </ContentSection>
 
-          {/* Enhanced Quality Selection Section */}
-          <ContentSection title="Video Quality">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {/* Quality Selection Buttons */}
+          <ContentSection title="Select Quality">
+            <div className="flex flex-wrap gap-3">
               {movieData.quality.map((quality, index) => (
                 <button
                   key={index}
                   onClick={() => handlePlayClick(index)}
                   className={`
-                    p-5 rounded-xl font-semibold text-left transition-all duration-300 transform hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-4
+                    px-6 py-3 rounded-full font-semibold text-sm transition-all duration-300
+                    flex items-center gap-2 min-w-max
                     ${
                       index === selectedQualityIndex
-                        ? "bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white shadow-lg ring-indigo-500"
-                        : "bg-gray-800/80 text-gray-200 hover:bg-gray-700/90 backdrop-blur-sm"
+                        ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg scale-105"
+                        : "bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm"
                     }
-                    border border-gray-600 hover:border-gray-500
+                    hover:shadow-xl hover:scale-105
                   `}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-bold uppercase tracking-wide opacity-90">
-                      {quality.type}
-                    </span>
-                    <span
-                      className={`
-                        text-xs px-2 py-1 rounded-full
-                        ${
-                          index === selectedQualityIndex
-                            ? "bg-white/30"
-                            : "bg-gray-700"
-                        }
-                      `}
-                    >
-                      {quality.size}
-                    </span>
-                  </div>
-                  <div className="text-xs opacity-80 flex items-center gap-2">
-                    🔊 {quality.audio}
-                  </div>
-                  <div className="text-xs opacity-70 flex items-center gap-2 mt-1">
-                    🏷️ {quality.subtitle || "No Subtitles"}
-                  </div>
-                  <div className="text-xs opacity-60 mt-2">
-                    {quality.video_codec} • {quality.file_type.toUpperCase()}
-                  </div>
+                  <span className="font-bold">{quality.type}</span>
+                  <span className="text-xs opacity-90">• {quality.size}</span>
+                  <span className="text-xs opacity-80">• {quality.audio}</span>
                 </button>
               ))}
             </div>
-            <p className="text-gray-400 text-sm mt-3 italic">
-              Click any quality option to start streaming instantly.
+            <p className="text-gray-300 text-sm mt-2">
+              Click any quality button to start streaming instantly.
             </p>
           </ContentSection>
 
@@ -395,5 +358,4 @@ const Slug = () => {
     </div>
   );
 };
-
 export default Slug;
