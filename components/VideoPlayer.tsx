@@ -92,29 +92,97 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const settingsMenuRef = useRef<HTMLDivElement>(null);
 
   // VLC player function
-  const openInVLC = () => {
-    // Create a VLC protocol URL
-    const vlcUrl = `vlc://${encodeURIComponent(videoSource)}`;
+ const openInVLC = () => {
+  // Create a comprehensive dialog with multiple options
+  const showVLCDialog = () => {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
+    modal.innerHTML = `
+      <div class="bg-white rounded-lg p-6 max-w-md mx-4">
+        <h3 class="text-lg font-semibold mb-4 text-gray-800">Open in VLC Player</h3>
+        <p class="text-sm text-gray-600 mb-4">Choose how you'd like to open this video in VLC:</p>
+        
+        <div class="space-y-3">
+          <button id="copy-url" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded">
+            📋 Copy URL to Clipboard
+          </button>
+          <button id="download-strm" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
+            💾 Download .strm File
+          </button>
+          <button id="try-protocol" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded">
+            🚀 Try VLC Protocol
+          </button>
+        </div>
+        
+        <div class="mt-4 p-3 bg-gray-100 rounded text-xs text-gray-700">
+          <strong>Manual Steps:</strong><br>
+          1. Open VLC Media Player<br>
+          2. Press Ctrl+N (or Media → Open Network Stream)<br>
+          3. Paste the URL and click Play
+        </div>
+        
+        <button id="close-modal" class="mt-4 w-full bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded">
+          Cancel
+        </button>
+      </div>
+    `;
     
-    // Try to open in VLC directly
-    window.open(vlcUrl, '_blank');
+    document.body.appendChild(modal);
     
-    // Fallback: provide a downloadable link
-    const fallbackUrl = `data:text/plain;charset=utf-8,${encodeURIComponent(videoSource)}`;
-    const link = document.createElement('a');
-    link.href = fallbackUrl;
-    link.download = 'video_url.txt';
-    link.style.display = 'none';
-    document.body.appendChild(link);
+    // Copy URL functionality
+    document.getElementById('copy-url').onclick = () => {
+      navigator.clipboard.writeText(videoSource).then(() => {
+        alert('URL copied to clipboard! Open VLC and press Ctrl+N to paste it.');
+        document.body.removeChild(modal);
+      }).catch(() => {
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea');
+        textarea.value = videoSource;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        alert('URL copied to clipboard! Open VLC and press Ctrl+N to paste it.');
+        document.body.removeChild(modal);
+      });
+    };
     
-    // Show user instructions
-    setTimeout(() => {
-      if (confirm('If VLC didn\'t open automatically, copy this URL to VLC: Media > Open Network Stream')) {
-        link.click();
-      }
+    // Download .strm file functionality
+    document.getElementById('download-strm').onclick = () => {
+      const blob = new Blob([videoSource], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'video-stream.strm';
+      document.body.appendChild(link);
+      link.click();
       document.body.removeChild(link);
-    }, 1000);
+      URL.revokeObjectURL(url);
+      document.body.removeChild(modal);
+    };
+    
+    // Try VLC protocol functionality
+    document.getElementById('try-protocol').onclick = () => {
+      window.open(`vlc://${videoSource}`, '_blank');
+      document.body.removeChild(modal);
+    };
+    
+    // Close modal functionality
+    document.getElementById('close-modal').onclick = () => {
+      document.body.removeChild(modal);
+    };
+    
+    // Close on background click
+    modal.onclick = (e) => {
+      if (e.target === modal) {
+        document.body.removeChild(modal);
+      }
+    };
   };
+  
+  showVLCDialog();
+};
+
 
   useEffect(() => {
     const videoElement = videoRef.current;
