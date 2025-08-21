@@ -91,98 +91,141 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const settingsMenuRef = useRef<HTMLDivElement>(null);
 
-  // VLC player function
- const openInVLC = () => {
-  // Create a comprehensive dialog with multiple options
-  const showVLCDialog = () => {
-    const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
-    modal.innerHTML = `
-      <div class="bg-white rounded-lg p-6 max-w-md mx-4">
-        <h3 class="text-lg font-semibold mb-4 text-gray-800">Open in VLC Player</h3>
-        <p class="text-sm text-gray-600 mb-4">Choose how you'd like to open this video in VLC:</p>
-        
-        <div class="space-y-3">
-          <button id="copy-url" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded">
-            📋 Copy URL to Clipboard
-          </button>
-          <button id="download-strm" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
-            💾 Download .strm File
-          </button>
-          <button id="try-protocol" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded">
-            🚀 Try VLC Protocol
+  // VLC player function - Fixed with proper error handling
+  const openInVLC = useCallback(() => {
+    const showVLCDialog = () => {
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center';
+      modal.style.zIndex = '9999';
+      modal.innerHTML = `
+        <div class="bg-white rounded-lg p-6 max-w-md mx-4">
+          <h3 class="text-lg font-semibold mb-4 text-gray-800">Open in VLC Player</h3>
+          <p class="text-sm text-gray-600 mb-4">Choose how you'd like to open this video in VLC:</p>
+          
+          <div class="space-y-3">
+            <button id="copy-url" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded transition-colors">
+              📋 Copy URL to Clipboard
+            </button>
+            <button id="download-strm" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded transition-colors">
+              💾 Download .strm File
+            </button>
+            <button id="try-protocol" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded transition-colors">
+              🚀 Try VLC Protocol
+            </button>
+          </div>
+          
+          <div class="mt-4 p-3 bg-gray-100 rounded text-xs text-gray-700">
+            <strong>Manual Steps:</strong><br>
+            1. Open VLC Media Player<br>
+            2. Press Ctrl+N (or Media → Open Network Stream)<br>
+            3. Paste the URL and click Play
+          </div>
+          
+          <button id="close-modal" class="mt-4 w-full bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded transition-colors">
+            Cancel
           </button>
         </div>
-        
-        <div class="mt-4 p-3 bg-gray-100 rounded text-xs text-gray-700">
-          <strong>Manual Steps:</strong><br>
-          1. Open VLC Media Player<br>
-          2. Press Ctrl+N (or Media → Open Network Stream)<br>
-          3. Paste the URL and click Play
-        </div>
-        
-        <button id="close-modal" class="mt-4 w-full bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded">
-          Cancel
-        </button>
-      </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    // Copy URL functionality
-    document.getElementById('copy-url').onclick = () => {
-      navigator.clipboard.writeText(videoSource).then(() => {
-        alert('URL copied to clipboard! Open VLC and press Ctrl+N to paste it.');
-        document.body.removeChild(modal);
-      }).catch(() => {
-        // Fallback for older browsers
-        const textarea = document.createElement('textarea');
-        textarea.value = videoSource;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-        alert('URL copied to clipboard! Open VLC and press Ctrl+N to paste it.');
-        document.body.removeChild(modal);
-      });
-    };
-    
-    // Download .strm file functionality
-    document.getElementById('download-strm').onclick = () => {
-      const blob = new Blob([videoSource], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'video-stream.strm';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      document.body.removeChild(modal);
-    };
-    
-    // Try VLC protocol functionality
-    document.getElementById('try-protocol').onclick = () => {
-      window.open(`vlc://${videoSource}`, '_blank');
-      document.body.removeChild(modal);
-    };
-    
-    // Close modal functionality
-    document.getElementById('close-modal').onclick = () => {
-      document.body.removeChild(modal);
-    };
-    
-    // Close on background click
-    modal.onclick = (e) => {
-      if (e.target === modal) {
-        document.body.removeChild(modal);
+      `;
+      
+      document.body.appendChild(modal);
+      
+      // Copy URL functionality with proper error handling
+      const copyButton = document.getElementById('copy-url');
+      if (copyButton) {
+        copyButton.onclick = () => {
+          const copyToClipboard = () => {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(videoSource).then(() => {
+                alert('URL copied to clipboard! Open VLC and press Ctrl+N to paste it.');
+                document.body.removeChild(modal);
+              }).catch(() => {
+                fallbackCopy();
+              });
+            } else {
+              fallbackCopy();
+            }
+          };
+          
+          const fallbackCopy = () => {
+            try {
+              const textarea = document.createElement('textarea');
+              textarea.value = videoSource;
+              textarea.style.position = 'fixed';
+              textarea.style.left = '-999999px';
+              textarea.style.top = '-999999px';
+              document.body.appendChild(textarea);
+              textarea.focus();
+              textarea.select();
+              document.execCommand('copy');
+              document.body.removeChild(textarea);
+              alert('URL copied to clipboard! Open VLC and press Ctrl+N to paste it.');
+              document.body.removeChild(modal);
+            } catch (err) {
+              alert(`Copy failed. Please manually copy this URL:\n\n${videoSource}`);
+              document.body.removeChild(modal);
+            }
+          };
+          
+          copyToClipboard();
+        };
       }
+      
+      // Download .strm file functionality
+      const downloadButton = document.getElementById('download-strm');
+      if (downloadButton) {
+        downloadButton.onclick = () => {
+          try {
+            const blob = new Blob([videoSource], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'video-stream.strm';
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            document.body.removeChild(modal);
+          } catch (err) {
+            alert('Download failed. Please copy the URL manually.');
+            document.body.removeChild(modal);
+          }
+        };
+      }
+      
+      // Try VLC protocol functionality
+      const protocolButton = document.getElementById('try-protocol');
+      if (protocolButton) {
+        protocolButton.onclick = () => {
+          try {
+            const vlcUrl = `vlc://${encodeURIComponent(videoSource)}`;
+            window.open(vlcUrl, '_blank');
+            document.body.removeChild(modal);
+          } catch (err) {
+            alert('VLC protocol failed. Please use one of the other options.');
+            document.body.removeChild(modal);
+          }
+        };
+      }
+      
+      // Close modal functionality
+      const closeButton = document.getElementById('close-modal');
+      if (closeButton) {
+        closeButton.onclick = () => {
+          document.body.removeChild(modal);
+        };
+      }
+      
+      // Close on background click
+      modal.onclick = (e) => {
+        if (e.target === modal) {
+          document.body.removeChild(modal);
+        }
+      };
     };
-  };
-  
-  showVLCDialog();
-};
-
+    
+    showVLCDialog();
+  }, [videoSource]);
 
   useEffect(() => {
     const videoElement = videoRef.current;
@@ -204,72 +247,72 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
 
-useEffect(() => {
-  const videoElement = videoRef.current;
-  if (!videoElement) return;
+  useEffect(() => {
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
 
-  const handleTimeUpdate = () => {
-    updatePlayerState({
-      currentTime: videoElement.currentTime,
-      progress: (videoElement.currentTime / videoElement.duration) * 100,
-    });
-  };
+    const handleTimeUpdate = () => {
+      if (videoElement.duration && isFinite(videoElement.duration)) {
+        updatePlayerState({
+          currentTime: videoElement.currentTime,
+          progress: (videoElement.currentTime / videoElement.duration) * 100,
+        });
+      }
+    };
 
-  const handleLoadedMetadata = () => {
-    updatePlayerState({
-      duration: videoElement.duration,
-      volume: videoElement.volume,
-      playbackRate: videoElement.playbackRate,
-    });
-  };
+    const handleLoadedMetadata = () => {
+      updatePlayerState({
+        duration: videoElement.duration,
+        volume: videoElement.volume,
+        playbackRate: videoElement.playbackRate,
+      });
+    };
 
-  videoElement.addEventListener("timeupdate", handleTimeUpdate);
-  videoElement.addEventListener("loadedmetadata", handleLoadedMetadata);
+    videoElement.addEventListener("timeupdate", handleTimeUpdate);
+    videoElement.addEventListener("loadedmetadata", handleLoadedMetadata);
 
-  videoElement.volume = playerState.volume;
-  videoElement.playbackRate = playerState.playbackRate;
+    videoElement.volume = playerState.volume;
+    videoElement.playbackRate = playerState.playbackRate;
 
-  return () => {
-    videoElement.removeEventListener("timeupdate", handleTimeUpdate);
-    videoElement.removeEventListener("loadedmetadata", handleLoadedMetadata);
-  };
-}, [playerState.volume, playerState.playbackRate, updatePlayerState]);
-
+    return () => {
+      videoElement.removeEventListener("timeupdate", handleTimeUpdate);
+      videoElement.removeEventListener("loadedmetadata", handleLoadedMetadata);
+    };
+  }, [playerState.volume, playerState.playbackRate, updatePlayerState]);
 
   useEffect(() => {
-  const resetTimer = () => {
-    updatePlayerState({ showControls: true });
-    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    const resetTimer = () => {
+      updatePlayerState({ showControls: true });
+      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
 
-    controlsTimeoutRef.current = setTimeout(() => {
-      updatePlayerState({ showControls: false });
-    }, 3000);
-  };
+      controlsTimeoutRef.current = setTimeout(() => {
+        updatePlayerState({ showControls: false });
+      }, 3000);
+    };
 
-  const handleInteraction = () => {
+    const handleInteraction = () => {
+      resetTimer();
+    };
+
     resetTimer();
-  };
 
-  resetTimer();
-
-  const playerElement = playerRef.current;
-  if (playerElement) {
-    playerElement.addEventListener("mousemove", handleInteraction);
-    playerElement.addEventListener("click", handleInteraction);
-  }
-
-  document.addEventListener("keydown", handleInteraction);
-
-  return () => {
+    const playerElement = playerRef.current;
     if (playerElement) {
-      playerElement.removeEventListener("mousemove", handleInteraction);
-      playerElement.removeEventListener("click", handleInteraction);
+      playerElement.addEventListener("mousemove", handleInteraction);
+      playerElement.addEventListener("click", handleInteraction);
     }
-    document.removeEventListener("keydown", handleInteraction);
-    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-  };
-}, [updatePlayerState]);
 
+    document.addEventListener("keydown", handleInteraction);
+
+    return () => {
+      if (playerElement) {
+        playerElement.removeEventListener("mousemove", handleInteraction);
+        playerElement.removeEventListener("click", handleInteraction);
+      }
+      document.removeEventListener("keydown", handleInteraction);
+      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    };
+  }, [updatePlayerState]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -293,77 +336,71 @@ useEffect(() => {
   }, [showSettingsMenu]);
 
   useEffect(() => {
-  const videoElement = videoRef.current;
-  if (!videoElement) return;
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
 
-  const handleLoadingChange = () => {
-    updatePlayerState({ isLoading: videoElement.readyState < 3 });
-  };
+    const handleLoadingChange = () => {
+      updatePlayerState({ isLoading: videoElement.readyState < 3 });
+    };
 
-  const handleProgress = () => {
-    if (!videoElement.duration || !isFinite(videoElement.duration)) return;
+    const handleProgress = () => {
+      if (!videoElement.duration || !isFinite(videoElement.duration)) return;
 
-    const buffer = videoElement.buffered;
-    if (buffer.length > 0) {
-      const bufferedEnd = buffer.end(buffer.length - 1);
-      updatePlayerState({
-        bufferProgress: (bufferedEnd / videoElement.duration) * 100,
-      });
-    }
-  };
-  handleLoadingChange();
+      const buffer = videoElement.buffered;
+      if (buffer.length > 0) {
+        const bufferedEnd = buffer.end(buffer.length - 1);
+        updatePlayerState({
+          bufferProgress: (bufferedEnd / videoElement.duration) * 100,
+        });
+      }
+    };
+    
+    const handleWaiting = () => updatePlayerState({ isLoading: true });
+    const handlePlaying = () => updatePlayerState({ isLoading: false });
+    const handleStalled = () => updatePlayerState({ isLoading: true });
+    const handleSeeking = () => updatePlayerState({ isLoading: true });
+    
+    handleLoadingChange();
 
-  videoElement.addEventListener("waiting", () =>
-    updatePlayerState({ isLoading: true })
-  );
-  videoElement.addEventListener("playing", () =>
-    updatePlayerState({ isLoading: false })
-  );
-  videoElement.addEventListener("canplay", handleLoadingChange);
-  videoElement.addEventListener("canplaythrough", handleLoadingChange);
-  videoElement.addEventListener("progress", handleProgress);
+    videoElement.addEventListener("waiting", handleWaiting);
+    videoElement.addEventListener("playing", handlePlaying);
+    videoElement.addEventListener("canplay", handleLoadingChange);
+    videoElement.addEventListener("canplaythrough", handleLoadingChange);
+    videoElement.addEventListener("progress", handleProgress);
+    videoElement.addEventListener("stalled", handleStalled);
+    videoElement.addEventListener("seeking", handleSeeking);
+    videoElement.addEventListener("seeked", handleLoadingChange);
 
-  videoElement.addEventListener("stalled", () =>
-    updatePlayerState({ isLoading: true })
-  );
-
-  videoElement.addEventListener("seeking", () =>
-    updatePlayerState({ isLoading: true })
-  );
-  videoElement.addEventListener("seeked", handleLoadingChange);
-
-  return () => {
-    videoElement.removeEventListener("waiting", () =>
-      updatePlayerState({ isLoading: true })
-    );
-    videoElement.removeEventListener("playing", () =>
-      updatePlayerState({ isLoading: false })
-    );
-    videoElement.removeEventListener("canplay", handleLoadingChange);
-    videoElement.removeEventListener("canplaythrough", handleLoadingChange);
-    videoElement.removeEventListener("progress", handleProgress);
-    videoElement.removeEventListener("stalled", () =>
-      updatePlayerState({ isLoading: true })
-    );
-    videoElement.removeEventListener("seeking", () =>
-      updatePlayerState({ isLoading: true })
-    );
-    videoElement.removeEventListener("seeked", handleLoadingChange);
-  };
-}, [updatePlayerState]);
+    return () => {
+      videoElement.removeEventListener("waiting", handleWaiting);
+      videoElement.removeEventListener("playing", handlePlaying);
+      videoElement.removeEventListener("canplay", handleLoadingChange);
+      videoElement.removeEventListener("canplaythrough", handleLoadingChange);
+      videoElement.removeEventListener("progress", handleProgress);
+      videoElement.removeEventListener("stalled", handleStalled);
+      videoElement.removeEventListener("seeking", handleSeeking);
+      videoElement.removeEventListener("seeked", handleLoadingChange);
+    };
+  }, [updatePlayerState]);
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = false;
-      videoRef.current.volume = playerState.volume;
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
 
-      videoRef.current.addEventListener("loadedmetadata", () => {
-        if (videoRef.current) {
-          videoRef.current.muted = false;
-          videoRef.current.volume = playerState.volume;
-        }
-      });
-    }
+    const handleLoadedMetadata = () => {
+      if (videoElement) {
+        videoElement.muted = false;
+        videoElement.volume = playerState.volume;
+      }
+    };
+
+    videoElement.muted = false;
+    videoElement.volume = playerState.volume;
+    videoElement.addEventListener("loadedmetadata", handleLoadedMetadata);
+
+    return () => {
+      videoElement.removeEventListener("loadedmetadata", handleLoadedMetadata);
+    };
   }, [playerState.volume]);
 
   // Player controls
@@ -407,7 +444,7 @@ useEffect(() => {
     }
   };
 
-  // --- Volume Controls ---
+  // Volume Controls
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);
     updatePlayerState({ volume: newVolume });
@@ -443,7 +480,7 @@ useEffect(() => {
     return <RiVolumeUpLine size={24} />;
   };
 
-  // --- Playback Speed Controls ---
+  // Playback Speed Controls
   const handleSpeedChange = (rate: number) => {
     if (videoRef.current) {
       videoRef.current.playbackRate = rate;
@@ -451,7 +488,6 @@ useEffect(() => {
       setShowSettingsMenu(false);
     }
   };
-  // --- End Playback Speed Controls ---
 
   const videoClasses = useMemo(() => {
     const baseClasses = "mx-auto my-auto z-0";
@@ -490,13 +526,13 @@ useEffect(() => {
   };
 
   useEffect(() => {
-  const handleFullscreenChange = () => {
-    updatePlayerState({ isFullscreen: !!document.fullscreenElement });
-  };
-  document.addEventListener("fullscreenchange", handleFullscreenChange);
-  return () =>
-    document.removeEventListener("fullscreenchange", handleFullscreenChange);
-}, [updatePlayerState]);
+    const handleFullscreenChange = () => {
+      updatePlayerState({ isFullscreen: !!document.fullscreenElement });
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, [updatePlayerState]);
 
   const formatTime = (seconds: number) => {
     if (isNaN(seconds) || !isFinite(seconds)) return "0:00";
@@ -551,7 +587,6 @@ useEffect(() => {
             ) : (
               <div className="text-white text-xl font-medium text-center bg-black/30 p-4 rounded-md">
                 <h3>{title || "Loading..."}</h3>
-
                 <div className="mt-2 text-sm">Buffering...</div>
               </div>
             )}
@@ -581,7 +616,6 @@ useEffect(() => {
 
             if (showSettingsMenu) {
               setShowSettingsMenu(false);
-
               return;
             }
             togglePlay();
@@ -723,7 +757,7 @@ useEffect(() => {
             <div className="relative w-full mx-2 group h-4 flex items-center">
               {/* Buffer progress bar */}
               <div
-                className="absolute left-0 top-1/2 transform -translate-y-1/2 h-1 bg-gray-500 rounded-full w-full"
+                className="absolute left-0 top-1/2 transform -translate-y-1/2 h-1 bg-gray-500 rounded-full"
                 style={{ width: `${playerState.bufferProgress}%` }}
               />
               {/* Seek bar */}
@@ -797,6 +831,7 @@ useEffect(() => {
                 />
               </div>
             </div>
+            
             <div className="flex-grow text-center px-2 sm:px-4 overflow-hidden">
               <h3 className="text-white text-sm sm:text-base font-medium truncate">
                 {title || ""}
@@ -868,6 +903,7 @@ useEffect(() => {
                   <RiSettingsLine size={24} />
                 </button>
               </div>
+              
               <div className="relative">
                 <button
                   onClick={toggleFullscreen}
