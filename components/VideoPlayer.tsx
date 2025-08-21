@@ -91,6 +91,31 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const settingsMenuRef = useRef<HTMLDivElement>(null);
 
+  // VLC player function
+  const openInVLC = () => {
+    // Create a VLC protocol URL
+    const vlcUrl = `vlc://${encodeURIComponent(videoSource)}`;
+    
+    // Try to open in VLC directly
+    window.open(vlcUrl, '_blank');
+    
+    // Fallback: provide a downloadable link
+    const fallbackUrl = `data:text/plain;charset=utf-8,${encodeURIComponent(videoSource)}`;
+    const link = document.createElement('a');
+    link.href = fallbackUrl;
+    link.download = 'video_url.txt';
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    
+    // Show user instructions
+    setTimeout(() => {
+      if (confirm('If VLC didn\'t open automatically, copy this URL to VLC: Media > Open Network Stream')) {
+        link.click();
+      }
+      document.body.removeChild(link);
+    }, 1000);
+  };
+
   useEffect(() => {
     const videoElement = videoRef.current;
     if (!videoElement) return;
@@ -717,6 +742,47 @@ useEffect(() => {
                   {quality}
                 </div>
               )}
+
+              {/* VLC Player Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openInVLC();
+                }}
+                className="text-orange-500 hover:text-orange-400 transition-colors"
+                title="Open in VLC Player"
+                aria-label="Open in VLC Player"
+              >
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="drop-shadow-sm"
+                >
+                  {/* VLC Cone Body */}
+                  <path 
+                    d="M12 3l-6 15h12L12 3z" 
+                    fill="#FF8800" 
+                    stroke="#FF6600" 
+                    strokeWidth="0.5"
+                  />
+                  {/* Orange stripe */}
+                  <path 
+                    d="M8 14h8l-1-2.5H9L8 14z" 
+                    fill="#FFB84D"
+                  />
+                  {/* Base shadow */}
+                  <ellipse 
+                    cx="12" 
+                    cy="18.5" 
+                    rx="6" 
+                    ry="1" 
+                    fill="#333"
+                    opacity="0.3"
+                  />
+                </svg>
+              </button>
 
               <div className="relative">
                 <button
