@@ -9,10 +9,10 @@ import Link from "next/link";
 const HeroSlideshow = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const { movies, isLoading, error } = useHeroSlider();
-  
+
   useEffect(() => {
     if (movies.length === 0) return;
-    
+
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % movies.length);
     }, 8000);
@@ -181,22 +181,21 @@ const HeroSlideshow = () => {
             <p className="text-white/80 text-xs sm:text-sm md:text-base mb-4 sm:mb-6 md:mb-8 max-w-full line-clamp-3 sm:line-clamp-4 md:line-clamp-none">
               {currentMovie.overview}
             </p>
-            <div className="flex gap-3 sm:gap-4 ">
+            <div className="flex gap-4 sm:gap-6">
               <Link
                 href={`/${currentMovie.type}/${currentMovie.id}`}
                 className="cursor-pointer"
               >
-                <button className="flex items-center justify-center bg-white hover:bg-white/90 text-black font-medium rounded-full w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 transition">
-                  <FaPlay size={16} className="sm:hidden" />
-                  <FaPlay size={18} className="hidden sm:block" />
+                <button className="flex items-center justify-center bg-white hover:bg-gray-200 text-black font-bold rounded-full w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 transition-all duration-300 transform hover:scale-110 shadow-lg shadow-white/20">
+                  <FaPlay size={20} className="ml-1" />
                 </button>
               </Link>
               <Link
                 href={`/${currentMovie.type}/${currentMovie.id}`}
                 className="cursor-pointer"
               >
-                <button className="border border-white/30 text-white hover:bg-white/10 px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 md:py-3 text-sm md:text-base rounded-full transition">
-                  See More
+                <button className="backdrop-blur-sm bg-white/20 border border-white/30 text-white hover:bg-white/30 px-6 sm:px-8 py-3 sm:py-3.5 text-sm sm:text-base font-semibold rounded-full transition-all duration-300 hover:scale-105 shadow-lg">
+                  More Info
                 </button>
               </Link>
             </div>
@@ -208,9 +207,8 @@ const HeroSlideshow = () => {
             <button
               key={index}
               onClick={() => setCurrentIndex(index)}
-              className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition-all ${
-                index === currentIndex ? "bg-white w-5 sm:w-6" : "bg-white/50"
-              }`}
+              className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition-all ${index === currentIndex ? "bg-white w-5 sm:w-6" : "bg-white/50"
+                }`}
               aria-label={`Go to slide ${index + 1}`}
             />
           ))}

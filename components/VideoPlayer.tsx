@@ -22,6 +22,9 @@ interface VideoPlayerProps {
   onClose: () => void;
   subtitles?: string;
   quality?: string;
+  qualities?: any[]; // Using any[] to avoid complex import circular dependencies, or we can define a local interface
+  onQualitySelect?: (index: number) => void;
+  currentQualityIndex?: number;
 }
 
 const playbackSpeeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
@@ -31,10 +34,10 @@ const aspectRatioModes = [
   "fill",
   "ratio16_9",
   "ratio4_3",
-] as const; 
+] as const;
 type AspectRatioMode = (typeof aspectRatioModes)[number];
 
-const settingTabs = ["Speed", "Subtitles", "Settings"] as const;
+const settingTabs = ["Speed", "Settings", "Quality", "Subtitles"] as const;
 type SettingTab = (typeof settingTabs)[number];
 
 const getAspectRatioLabel = (mode: AspectRatioMode): string => {
@@ -61,6 +64,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   onClose,
   subtitles,
   quality,
+  qualities,
+  onQualitySelect,
+  currentQualityIndex,
 }) => {
   const [playerState, setPlayerState] = useState({
     isPlaying: true,
@@ -111,71 +117,71 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
 
-useEffect(() => {
-  const videoElement = videoRef.current;
-  if (!videoElement) return;
+  useEffect(() => {
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
 
-  const handleTimeUpdate = () => {
-    updatePlayerState({
-      currentTime: videoElement.currentTime,
-      progress: (videoElement.currentTime / videoElement.duration) * 100,
-    });
-  };
+    const handleTimeUpdate = () => {
+      updatePlayerState({
+        currentTime: videoElement.currentTime,
+        progress: (videoElement.currentTime / videoElement.duration) * 100,
+      });
+    };
 
-  const handleLoadedMetadata = () => {
-    updatePlayerState({
-      duration: videoElement.duration,
-      volume: videoElement.volume,
-      playbackRate: videoElement.playbackRate,
-    });
-  };
+    const handleLoadedMetadata = () => {
+      updatePlayerState({
+        duration: videoElement.duration,
+        volume: videoElement.volume,
+        playbackRate: videoElement.playbackRate,
+      });
+    };
 
-  videoElement.addEventListener("timeupdate", handleTimeUpdate);
-  videoElement.addEventListener("loadedmetadata", handleLoadedMetadata);
+    videoElement.addEventListener("timeupdate", handleTimeUpdate);
+    videoElement.addEventListener("loadedmetadata", handleLoadedMetadata);
 
-  videoElement.volume = playerState.volume;
-  videoElement.playbackRate = playerState.playbackRate;
+    videoElement.volume = playerState.volume;
+    videoElement.playbackRate = playerState.playbackRate;
 
-  return () => {
-    videoElement.removeEventListener("timeupdate", handleTimeUpdate);
-    videoElement.removeEventListener("loadedmetadata", handleLoadedMetadata);
-  };
-}, [playerState.volume, playerState.playbackRate, updatePlayerState]);
+    return () => {
+      videoElement.removeEventListener("timeupdate", handleTimeUpdate);
+      videoElement.removeEventListener("loadedmetadata", handleLoadedMetadata);
+    };
+  }, [playerState.volume, playerState.playbackRate, updatePlayerState]);
 
 
   useEffect(() => {
-  const resetTimer = () => {
-    updatePlayerState({ showControls: true });
-    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    const resetTimer = () => {
+      updatePlayerState({ showControls: true });
+      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
 
-    controlsTimeoutRef.current = setTimeout(() => {
-      updatePlayerState({ showControls: false });
-    }, 3000);
-  };
+      controlsTimeoutRef.current = setTimeout(() => {
+        updatePlayerState({ showControls: false });
+      }, 3000);
+    };
 
-  const handleInteraction = () => {
+    const handleInteraction = () => {
+      resetTimer();
+    };
+
     resetTimer();
-  };
 
-  resetTimer();
-
-  const playerElement = playerRef.current;
-  if (playerElement) {
-    playerElement.addEventListener("mousemove", handleInteraction);
-    playerElement.addEventListener("click", handleInteraction);
-  }
-
-  document.addEventListener("keydown", handleInteraction);
-
-  return () => {
+    const playerElement = playerRef.current;
     if (playerElement) {
-      playerElement.removeEventListener("mousemove", handleInteraction);
-      playerElement.removeEventListener("click", handleInteraction);
+      playerElement.addEventListener("mousemove", handleInteraction);
+      playerElement.addEventListener("click", handleInteraction);
     }
-    document.removeEventListener("keydown", handleInteraction);
-    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-  };
-}, [updatePlayerState]);
+
+    document.addEventListener("keydown", handleInteraction);
+
+    return () => {
+      if (playerElement) {
+        playerElement.removeEventListener("mousemove", handleInteraction);
+        playerElement.removeEventListener("click", handleInteraction);
+      }
+      document.removeEventListener("keydown", handleInteraction);
+      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    };
+  }, [updatePlayerState]);
 
 
   useEffect(() => {
@@ -200,64 +206,64 @@ useEffect(() => {
   }, [showSettingsMenu]);
 
   useEffect(() => {
-  const videoElement = videoRef.current;
-  if (!videoElement) return;
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
 
-  const handleLoadingChange = () => {
-    updatePlayerState({ isLoading: videoElement.readyState < 3 });
-  };
+    const handleLoadingChange = () => {
+      updatePlayerState({ isLoading: videoElement.readyState < 3 });
+    };
 
-  const handleProgress = () => {
-    if (!videoElement.duration || !isFinite(videoElement.duration)) return;
+    const handleProgress = () => {
+      if (!videoElement.duration || !isFinite(videoElement.duration)) return;
 
-    const buffer = videoElement.buffered;
-    if (buffer.length > 0) {
-      const bufferedEnd = buffer.end(buffer.length - 1);
-      updatePlayerState({
-        bufferProgress: (bufferedEnd / videoElement.duration) * 100,
-      });
-    }
-  };
-  handleLoadingChange();
+      const buffer = videoElement.buffered;
+      if (buffer.length > 0) {
+        const bufferedEnd = buffer.end(buffer.length - 1);
+        updatePlayerState({
+          bufferProgress: (bufferedEnd / videoElement.duration) * 100,
+        });
+      }
+    };
+    handleLoadingChange();
 
-  videoElement.addEventListener("waiting", () =>
-    updatePlayerState({ isLoading: true })
-  );
-  videoElement.addEventListener("playing", () =>
-    updatePlayerState({ isLoading: false })
-  );
-  videoElement.addEventListener("canplay", handleLoadingChange);
-  videoElement.addEventListener("canplaythrough", handleLoadingChange);
-  videoElement.addEventListener("progress", handleProgress);
-
-  videoElement.addEventListener("stalled", () =>
-    updatePlayerState({ isLoading: true })
-  );
-
-  videoElement.addEventListener("seeking", () =>
-    updatePlayerState({ isLoading: true })
-  );
-  videoElement.addEventListener("seeked", handleLoadingChange);
-
-  return () => {
-    videoElement.removeEventListener("waiting", () =>
+    videoElement.addEventListener("waiting", () =>
       updatePlayerState({ isLoading: true })
     );
-    videoElement.removeEventListener("playing", () =>
+    videoElement.addEventListener("playing", () =>
       updatePlayerState({ isLoading: false })
     );
-    videoElement.removeEventListener("canplay", handleLoadingChange);
-    videoElement.removeEventListener("canplaythrough", handleLoadingChange);
-    videoElement.removeEventListener("progress", handleProgress);
-    videoElement.removeEventListener("stalled", () =>
+    videoElement.addEventListener("canplay", handleLoadingChange);
+    videoElement.addEventListener("canplaythrough", handleLoadingChange);
+    videoElement.addEventListener("progress", handleProgress);
+
+    videoElement.addEventListener("stalled", () =>
       updatePlayerState({ isLoading: true })
     );
-    videoElement.removeEventListener("seeking", () =>
+
+    videoElement.addEventListener("seeking", () =>
       updatePlayerState({ isLoading: true })
     );
-    videoElement.removeEventListener("seeked", handleLoadingChange);
-  };
-}, [updatePlayerState]);
+    videoElement.addEventListener("seeked", handleLoadingChange);
+
+    return () => {
+      videoElement.removeEventListener("waiting", () =>
+        updatePlayerState({ isLoading: true })
+      );
+      videoElement.removeEventListener("playing", () =>
+        updatePlayerState({ isLoading: false })
+      );
+      videoElement.removeEventListener("canplay", handleLoadingChange);
+      videoElement.removeEventListener("canplaythrough", handleLoadingChange);
+      videoElement.removeEventListener("progress", handleProgress);
+      videoElement.removeEventListener("stalled", () =>
+        updatePlayerState({ isLoading: true })
+      );
+      videoElement.removeEventListener("seeking", () =>
+        updatePlayerState({ isLoading: true })
+      );
+      videoElement.removeEventListener("seeked", handleLoadingChange);
+    };
+  }, [updatePlayerState]);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -397,13 +403,13 @@ useEffect(() => {
   };
 
   useEffect(() => {
-  const handleFullscreenChange = () => {
-    updatePlayerState({ isFullscreen: !!document.fullscreenElement });
-  };
-  document.addEventListener("fullscreenchange", handleFullscreenChange);
-  return () =>
-    document.removeEventListener("fullscreenchange", handleFullscreenChange);
-}, [updatePlayerState]);
+    const handleFullscreenChange = () => {
+      updatePlayerState({ isFullscreen: !!document.fullscreenElement });
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, [updatePlayerState]);
 
   const formatTime = (seconds: number) => {
     if (isNaN(seconds) || !isFinite(seconds)) return "0:00";
@@ -415,6 +421,11 @@ useEffect(() => {
   const showLoadingOverlay =
     playerState.isLoading &&
     (playerState.currentTime < 1 || (videoRef.current?.readyState ?? 0) < 3);
+
+  const openVLC = () => {
+    const vlcUrl = `vlc://${videoSource}`;
+    window.open(vlcUrl, "_blank");
+  };
 
   return (
     <motion.div
@@ -523,10 +534,9 @@ useEffect(() => {
                   key={tab}
                   onClick={() => setActiveSettingsTab(tab)}
                   className={`px-3 py-2 text-sm font-medium focus:outline-none transition-colors duration-150
-                    ${
-                      activeSettingsTab === tab
-                        ? "border-b-2 border-red-500 text-red-500"
-                        : "text-gray-300 hover:text-white hover:border-b-2 hover:border-gray-500"
+                    ${activeSettingsTab === tab
+                      ? "border-b-2 border-red-500 text-red-500"
+                      : "text-gray-300 hover:text-white hover:border-b-2 hover:border-gray-500"
                     }`}
                 >
                   {tab}
@@ -566,11 +576,10 @@ useEffect(() => {
                         <button
                           key={`speed-${speed}`}
                           onClick={() => handleSpeedChange(speed)}
-                          className={`text-left text-sm px-3 py-1.5 rounded w-full transition-colors ${
-                            playerState.playbackRate === speed
-                              ? "font-semibold bg-red-600 text-white"
-                              : "hover:bg-gray-700 text-gray-200"
-                          }`}
+                          className={`text-left text-sm px-3 py-1.5 rounded w-full transition-colors ${playerState.playbackRate === speed
+                            ? "font-semibold bg-red-600 text-white"
+                            : "hover:bg-gray-700 text-gray-200"
+                            }`}
                         >
                           {speed === 1 ? "Normal" : `${speed}x`}
                         </button>
@@ -590,16 +599,48 @@ useEffect(() => {
                         <button
                           key={mode}
                           onClick={() => setAspectRatioMode(mode)}
-                          className={`text-left text-sm px-3 py-1.5 rounded w-full transition-colors ${
-                            aspectRatioMode === mode
-                              ? "font-semibold bg-red-600 text-white"
-                              : "hover:bg-gray-700 text-gray-200"
-                          }`}
+                          className={`text-left text-sm px-3 py-1.5 rounded w-full transition-colors ${aspectRatioMode === mode
+                            ? "font-semibold bg-red-600 text-white"
+                            : "hover:bg-gray-700 text-gray-200"
+                            }`}
                         >
                           {getAspectRatioLabel(mode)}
                         </button>
                       ))}
                     </div>
+                  </div>
+                </div>
+              )}
+              {activeSettingsTab === "Quality" && ( // Added Quality Tab
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-gray-400 text-xs mb-1 font-semibold">
+                      Video Quality
+                    </div>
+                    {qualities && qualities.length > 0 ? (
+                      <div className="flex flex-col space-y-1">
+                        {qualities.map((q, index) => (
+                          <button
+                            key={index}
+                            onClick={() => {
+                              if (onQualitySelect) onQualitySelect(index);
+                              setShowSettingsMenu(false);
+                            }}
+                            className={`text-left text-sm px-3 py-1.5 rounded w-full transition-colors ${currentQualityIndex === index
+                              ? "font-semibold bg-red-600 text-white"
+                              : "hover:bg-gray-700 text-gray-200"
+                              }`}
+                          >
+                            <div className="flex flex-col">
+                              <span className="font-bold">{q.type}</span>
+                              <span className="text-xs opacity-80">{q.size}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-sm">No qualities available</p>
+                    )}
                   </div>
                 </div>
               )}
@@ -712,6 +753,15 @@ useEffect(() => {
 
             {/* Right Controls */}
             <div className="flex items-center space-x-2 sm:space-x-3">
+              {/* VLC Button */}
+              <button
+                onClick={openVLC}
+                className="text-orange-500 hover:text-orange-400 transition-colors hidden sm:block"
+                title="Play in VLC"
+              >
+                <span className="font-bold text-xs border border-orange-500 rounded px-1">VLC</span>
+              </button>
+
               {quality && (
                 <div className="text-white text-xs bg-black/30 px-1.5 py-0.5 rounded hidden sm:block">
                   {quality}

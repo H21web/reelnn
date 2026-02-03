@@ -33,7 +33,7 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [logoImageError, setLogoImageError] = useState(false); 
+  const [logoImageError, setLogoImageError] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -68,7 +68,7 @@ export default function Navbar() {
     img.onerror = () => {
       setLogoImageError(true);
     };
-  }, []); 
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -124,7 +124,7 @@ export default function Navbar() {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleEscKey);
     };
-  }, [isSearchActive]); 
+  }, [isSearchActive]);
 
   // Reusable animation variants
   const iconHoverAnimation = { scale: 1.1 };
@@ -137,7 +137,7 @@ export default function Navbar() {
   return (
     <>
       <nav
-        className="text-white p-3 sm:p-4 flex items-center justify-between z-30 fixed top-0 left-0 right-0 bg-gradient-to-b from-black/90 to-transparent"
+        className="text-white p-3 sm:p-5 flex items-center justify-between z-30 fixed top-0 left-0 right-0 bg-black/60 backdrop-blur-lg border-b border-white/5 transition-all duration-300"
         role="navigation"
       >
         {/* Mobile menu button  */}
@@ -248,9 +248,8 @@ export default function Navbar() {
         <div className="flex items-center space-x-3 md:space-x-4">
           <div className="relative flex items-center">
             <motion.button
-              className={`p-2 ${
-                isSearchActive ? "bg-gray-700" : "hover:bg-gray-700/30"
-              } rounded-full transition-colors`}
+              className={`p-2 ${isSearchActive ? "bg-gray-700" : "hover:bg-gray-700/30"
+                } rounded-full transition-colors`}
               whileHover={!isSearchActive ? iconHoverAnimation : {}}
               whileTap={!isSearchActive ? iconTapAnimation : {}}
               onClick={toggleSearch}
@@ -261,12 +260,12 @@ export default function Navbar() {
 
             <AnimatePresence>
               {isSearchActive && (
-                <motion.div 
+                <motion.div
                   className="absolute right-0 flex items-center"
                   initial={{ width: 0, opacity: 0 }}
-                  animate={{ 
-                    width: breakpoint === 0 ? "150px" : breakpoint === 1 ? "200px" : "320px", 
-                    opacity: 1 
+                  animate={{
+                    width: breakpoint === 0 ? "150px" : breakpoint === 1 ? "200px" : "320px",
+                    opacity: 1
                   }}
                   exit={{ width: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
@@ -284,8 +283,8 @@ export default function Navbar() {
               )}
             </AnimatePresence>
           </div>
-          
-          
+
+
         </div>
 
         {/* Mobile Menu Panel  */}

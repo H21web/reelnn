@@ -389,10 +389,9 @@ const Slug = () => {
                       onClick={() => handleQualitySelect(index)}
                       className={`
                         w-full p-4 rounded-xl text-left transition-all duration-200 relative
-                        ${
-                          index === selectedQualityIndex
-                            ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/25"
-                            : "bg-white/10 text-white hover:bg-white/20"
+                        ${index === selectedQualityIndex
+                          ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/25"
+                          : "bg-white/10 text-white hover:bg-white/20"
                         }
                       `}
                     >
@@ -472,6 +471,9 @@ const Slug = () => {
             onClose={handleCloseVideoPlayer}
             subtitles={movieData.quality?.[selectedQualityIndex]?.subtitle}
             quality={movieData.quality?.[selectedQualityIndex]?.type}
+            qualities={movieData.quality}
+            onQualitySelect={(index) => setSelectedQualityIndex(index)}
+            currentQualityIndex={selectedQualityIndex}
           />
         )}
       </AnimatePresence>

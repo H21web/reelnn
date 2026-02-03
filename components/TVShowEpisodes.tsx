@@ -318,6 +318,9 @@ const EpisodeItem: React.FC<{ episode: Episode; index: number; showId: string; s
           videoSource={streamUrl}
           title={episodeTitle}
           quality={episode.quality[selectedQuality].type || ""}
+          qualities={episode.quality}
+          onQualitySelect={(index) => setSelectedQuality(index)}
+          currentQualityIndex={selectedQuality}
           onClose={closePlayer}
         />
       )}
@@ -350,9 +353,8 @@ const EpisodeList: React.FC<EpisodeListProps & { showId: string; currentSeason: 
     );
   }
   const shouldUseScroll = filteredEpisodes.length >= 3;
-  const containerClassName = `mt-4 border-t border-gray-800 ${
-    shouldUseScroll ? 'max-h-[500px] overflow-y-auto pr-1 custom-scrollbar' : ''
-  }`;
+  const containerClassName = `mt-4 border-t border-gray-800 ${shouldUseScroll ? 'max-h-[500px] overflow-y-auto pr-1 custom-scrollbar' : ''
+    }`;
 
   return (
     <div className={containerClassName}>
