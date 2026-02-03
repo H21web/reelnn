@@ -86,6 +86,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     showControls: true,
     isLoading: true,
     bufferProgress: 0,
+    subtitlesEnabled: true,
   });
 
   const updatePlayerState = useCallback((updates: Partial<typeof playerState>) => {
@@ -512,7 +513,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           }}
           onDoubleClick={toggleFullscreen}
         >
-          {subtitles && (
+          {subtitles && playerState.subtitlesEnabled && (
             <track
               kind="subtitles"
               src={subtitles}
@@ -651,8 +652,38 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 </div>
               )}
               {activeSettingsTab === "Subtitles" && (
-                <div>
-                  <p className="text-green-300 text-sm">#TODO</p>
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-gray-400 text-xs mb-1 font-semibold">
+                      Subtitles
+                    </div>
+                    <div className="flex flex-col space-y-1">
+                      <button
+                        onClick={() => {
+                          updatePlayerState({ subtitlesEnabled: true });
+                          setShowSettingsMenu(false);
+                        }}
+                        className={`text-left text-sm px-3 py-1.5 rounded w-full transition-colors ${playerState.subtitlesEnabled
+                          ? "font-semibold bg-red-600 text-white"
+                          : "hover:bg-gray-700 text-gray-200"
+                          }`}
+                      >
+                        English
+                      </button>
+                      <button
+                        onClick={() => {
+                          updatePlayerState({ subtitlesEnabled: false });
+                          setShowSettingsMenu(false);
+                        }}
+                        className={`text-left text-sm px-3 py-1.5 rounded w-full transition-colors ${!playerState.subtitlesEnabled
+                          ? "font-semibold bg-red-600 text-white"
+                          : "hover:bg-gray-700 text-gray-200"
+                          }`}
+                      >
+                        Off
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

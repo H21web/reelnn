@@ -318,6 +318,7 @@ const EpisodeItem: React.FC<{ episode: Episode; index: number; showId: string; s
           videoSource={streamUrl}
           title={episodeTitle}
           quality={episode.quality[selectedQuality].type || ""}
+          subtitles={episode.quality[selectedQuality].subtitle}
           qualities={episode.quality}
           onQualitySelect={(index) => setSelectedQuality(index)}
           currentQualityIndex={selectedQuality}
