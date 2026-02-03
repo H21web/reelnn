@@ -15,6 +15,12 @@ import {
 } from "react-icons/ri";
 import Image from "next/image";
 
+export interface QualityOption {
+  type: string;
+  size?: string;
+  [key: string]: any;
+}
+
 interface VideoPlayerProps {
   videoSource: string;
   title?: string;
@@ -22,7 +28,7 @@ interface VideoPlayerProps {
   onClose: () => void;
   subtitles?: string;
   quality?: string;
-  qualities?: any[]; // Using any[] to avoid complex import circular dependencies, or we can define a local interface
+  qualities?: QualityOption[];
   onQualitySelect?: (index: number) => void;
   currentQualityIndex?: number;
 }

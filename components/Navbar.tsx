@@ -227,18 +227,20 @@ export default function Navbar() {
               {logoImageError ? (
                 <span className="text-2xl font-bold bg-gradient-to-r from-amber-500 to-pink-500 bg-clip-text text-transparent">{`${NEXT_PUBLIC_SITE_NAME}`}</span>
               ) : (
-                <img
-                  src="/logo.png"
-                  alt={`${NEXT_PUBLIC_SITE_NAME} Logo`}
-                  width={40}
-                  height={40}
-                  className="w-10 h-10"
-                  onError={() => {
-                    if (!logoImageError) {
-                      setLogoImageError(true);
-                    }
-                  }}
-                />
+                <div style={{ width: '40px', height: '40px' }}>
+                  <img
+                    src="/logo.png"
+                    alt={`${NEXT_PUBLIC_SITE_NAME} Logo`}
+                    width={40}
+                    height={40}
+                    className="w-10 h-10 object-contain"
+                    onError={() => {
+                      if (!logoImageError) {
+                        setLogoImageError(true);
+                      }
+                    }}
+                  />
+                </div>
               )}
             </motion.div>
           </Link>

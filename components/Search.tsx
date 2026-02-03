@@ -27,31 +27,34 @@ const Search = forwardRef<HTMLDivElement, SearchProps>(
     const [error, setError] = useState<string | null>(null);
 
     // Debounced search function
-    const handleSearch = useCallback(
-      debounce(async (query: string) => {
-        if (query.length < 3) {
-          setResults([]);
-          setIsLoading(false);
-          return;
-        }
+    const handleSearch = useMemo(
+      () =>
+        debounce(async (query: string) => {
+          if (query.length < 3) {
+            setResults([]);
+            setIsLoading(false);
+            return;
+          }
 
-        setIsLoading(true);
-        setError(null);
+          setIsLoading(true);
+          setError(null);
 
-        try {
-          const res = await fetch(`/api/handle_search?query=${encodeURIComponent(query)}`);
-          if (!res.ok) throw new Error("Network response was not ok");
+          try {
+            const res = await fetch(
+              `/api/handle_search?query=${encodeURIComponent(query)}`
+            );
+            if (!res.ok) throw new Error("Network response was not ok");
 
-          const data: SearchResult[] = await res.json();
-          setResults(data);
-        } catch (err) {
-          console.error("Search error:", err);
-          setError("An error occurred while searching. Please try again.");
-          setResults([]);
-        } finally {
-          setIsLoading(false);
-        }
-      }, DEBOUNCE_MS),
+            const data: SearchResult[] = await res.json();
+            setResults(data);
+          } catch (err) {
+            console.error("Search error:", err);
+            setError("An error occurred while searching. Please try again.");
+            setResults([]);
+          } finally {
+            setIsLoading(false);
+          }
+        }, DEBOUNCE_MS),
       []
     );
 
