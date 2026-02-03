@@ -1,6 +1,6 @@
 import { generateStreamToken } from '@/utils/tokenUtils';
 
-export const runtime = 'edge';
+
 
 export default async function handler(request: Request) {
   if (request.method !== 'POST') {
@@ -9,18 +9,18 @@ export default async function handler(request: Request) {
       headers: { 'Content-Type': 'application/json' }
     });
   }
-  
+
   try {
     const body = await request.json();
     const { id, mediaType, qualityIndex, seasonNumber, episodeNumber } = body;
-    
+
     if (!id || !mediaType) {
       return new Response(JSON.stringify({ error: 'Missing required parameters' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       });
     }
-    
+
     const token = await generateStreamToken({
       id,
       mediaType,
@@ -28,7 +28,7 @@ export default async function handler(request: Request) {
       seasonNumber,
       episodeNumber
     });
-    
+
     return new Response(JSON.stringify({ token }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }

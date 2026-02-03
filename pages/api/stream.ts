@@ -1,7 +1,7 @@
 import { verifyStreamToken } from "@/utils/tokenUtils";
 import { BACKEND_URL } from "@/config";
 
-export const runtime = 'edge';
+
 
 export default async function handler(request: Request) {
   const url = new URL(request.url);

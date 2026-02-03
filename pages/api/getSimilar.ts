@@ -1,6 +1,6 @@
 import { BACKEND_URL } from "@/config";
 
-export const runtime = 'edge';
+
 
 interface SimilarContent {
   id: string;
@@ -41,7 +41,7 @@ export default async function handler(request: Request) {
     }
 
     const data: SimilarContent[] = await response.json();
-    
+
     return new Response(JSON.stringify(data), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }

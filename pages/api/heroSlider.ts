@@ -1,6 +1,6 @@
 import { BACKEND_URL } from "@/config";
 
-export const runtime = 'edge';
+
 
 export default async function handler() {
   try {

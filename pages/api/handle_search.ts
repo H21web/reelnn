@@ -1,6 +1,6 @@
 import { BACKEND_URL } from "@/config";
 
-export const runtime = 'edge';
+
 
 export default async function handler(request: Request) {
   if (request.method !== "GET") {
@@ -17,9 +17,9 @@ export default async function handler(request: Request) {
     if (!query || query.length < 3) {
       return new Response(
         JSON.stringify({ error: "Query should be at least 3 characters" }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        }
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      }
       );
     }
 
@@ -32,7 +32,7 @@ export default async function handler(request: Request) {
     }
 
     const data = await response.json();
-    
+
     return new Response(JSON.stringify(data), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }

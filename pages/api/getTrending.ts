@@ -1,6 +1,6 @@
 import { BACKEND_URL } from "@/config";
 
-export const runtime = 'edge';
+
 
 export default async function handler() {
   try {
@@ -11,7 +11,7 @@ export default async function handler() {
     }
 
     const data = await response.json();
-    
+
     return new Response(JSON.stringify(data), {
       status: 200,
       headers: {

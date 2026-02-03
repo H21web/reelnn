@@ -1,6 +1,6 @@
 import { BACKEND_URL } from "@/config";
 
-export const runtime = 'edge';
+
 
 interface Episode {
   episode_number: number;
@@ -82,13 +82,13 @@ export default async function handler(request: Request) {
       console.error(`API error (${response.status}):`, errorText);
       throw new Error(`API responded with status: ${response.status}`);
     }
-    
+
     const data: ShowData = await response.json();
     console.log("Fetched show details:", data);
 
     return new Response(JSON.stringify(data), {
       status: 200,
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 's-maxage=43200'
       }
