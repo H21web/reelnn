@@ -45,7 +45,22 @@ export default async function handler(request: Request) {
     }
 
     const data: MovieData = await response.json();
-    
+
+    // Deduplicate quality array based on size and name (type)
+    if (data.quality && Array.isArray(data.quality)) {
+      const seen = new Set();
+      // @ts-ignore - The backend returns more fields than defined in the local interface
+      data.quality = data.quality.filter((item: any) => {
+        // Create a unique key based on size and name (type corresponds to file name usually)
+        const key = `${item.size}-${item.type || item.resolution || 'unknown'}`;
+        if (seen.has(key)) {
+          return false;
+        }
+        seen.add(key);
+        return true;
+      });
+    }
+
     return new Response(JSON.stringify(data), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }

@@ -31,7 +31,7 @@ const aspectRatioModes = [
   "fill",
   "ratio16_9",
   "ratio4_3",
-] as const; 
+] as const;
 type AspectRatioMode = (typeof aspectRatioModes)[number];
 
 const settingTabs = ["Speed", "Subtitles", "Settings"] as const;
@@ -62,6 +62,30 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   subtitles,
   quality,
 }) => {
+  const [currentSubtitle, setCurrentSubtitle] = useState(subtitles);
+  const [subtitleQuery, setSubtitleQuery] = useState(title || "");
+  const [subtitleResults, setSubtitleResults] = useState<any[]>([]);
+  const [searchingSubs, setSearchingSubs] = useState(false);
+
+  useEffect(() => {
+    setCurrentSubtitle(subtitles);
+  }, [subtitles]);
+
+  const searchSubtitles = async () => {
+    if (!subtitleQuery) return;
+    setSearchingSubs(true);
+    try {
+      const res = await fetch(`/api/searchSubtitles?query=${encodeURIComponent(subtitleQuery)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSubtitleResults(Array.isArray(data) ? data : []);
+      }
+    } catch (e) {
+      console.error("Subtitle search failed", e);
+    } finally {
+      setSearchingSubs(false);
+    }
+  };
   const [playerState, setPlayerState] = useState({
     isPlaying: true,
     progress: 0,
@@ -111,71 +135,71 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
 
-useEffect(() => {
-  const videoElement = videoRef.current;
-  if (!videoElement) return;
+  useEffect(() => {
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
 
-  const handleTimeUpdate = () => {
-    updatePlayerState({
-      currentTime: videoElement.currentTime,
-      progress: (videoElement.currentTime / videoElement.duration) * 100,
-    });
-  };
+    const handleTimeUpdate = () => {
+      updatePlayerState({
+        currentTime: videoElement.currentTime,
+        progress: (videoElement.currentTime / videoElement.duration) * 100,
+      });
+    };
 
-  const handleLoadedMetadata = () => {
-    updatePlayerState({
-      duration: videoElement.duration,
-      volume: videoElement.volume,
-      playbackRate: videoElement.playbackRate,
-    });
-  };
+    const handleLoadedMetadata = () => {
+      updatePlayerState({
+        duration: videoElement.duration,
+        volume: videoElement.volume,
+        playbackRate: videoElement.playbackRate,
+      });
+    };
 
-  videoElement.addEventListener("timeupdate", handleTimeUpdate);
-  videoElement.addEventListener("loadedmetadata", handleLoadedMetadata);
+    videoElement.addEventListener("timeupdate", handleTimeUpdate);
+    videoElement.addEventListener("loadedmetadata", handleLoadedMetadata);
 
-  videoElement.volume = playerState.volume;
-  videoElement.playbackRate = playerState.playbackRate;
+    videoElement.volume = playerState.volume;
+    videoElement.playbackRate = playerState.playbackRate;
 
-  return () => {
-    videoElement.removeEventListener("timeupdate", handleTimeUpdate);
-    videoElement.removeEventListener("loadedmetadata", handleLoadedMetadata);
-  };
-}, [playerState.volume, playerState.playbackRate, updatePlayerState]);
+    return () => {
+      videoElement.removeEventListener("timeupdate", handleTimeUpdate);
+      videoElement.removeEventListener("loadedmetadata", handleLoadedMetadata);
+    };
+  }, [playerState.volume, playerState.playbackRate, updatePlayerState]);
 
 
   useEffect(() => {
-  const resetTimer = () => {
-    updatePlayerState({ showControls: true });
-    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    const resetTimer = () => {
+      updatePlayerState({ showControls: true });
+      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
 
-    controlsTimeoutRef.current = setTimeout(() => {
-      updatePlayerState({ showControls: false });
-    }, 3000);
-  };
+      controlsTimeoutRef.current = setTimeout(() => {
+        updatePlayerState({ showControls: false });
+      }, 3000);
+    };
 
-  const handleInteraction = () => {
+    const handleInteraction = () => {
+      resetTimer();
+    };
+
     resetTimer();
-  };
 
-  resetTimer();
-
-  const playerElement = playerRef.current;
-  if (playerElement) {
-    playerElement.addEventListener("mousemove", handleInteraction);
-    playerElement.addEventListener("click", handleInteraction);
-  }
-
-  document.addEventListener("keydown", handleInteraction);
-
-  return () => {
+    const playerElement = playerRef.current;
     if (playerElement) {
-      playerElement.removeEventListener("mousemove", handleInteraction);
-      playerElement.removeEventListener("click", handleInteraction);
+      playerElement.addEventListener("mousemove", handleInteraction);
+      playerElement.addEventListener("click", handleInteraction);
     }
-    document.removeEventListener("keydown", handleInteraction);
-    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-  };
-}, [updatePlayerState]);
+
+    document.addEventListener("keydown", handleInteraction);
+
+    return () => {
+      if (playerElement) {
+        playerElement.removeEventListener("mousemove", handleInteraction);
+        playerElement.removeEventListener("click", handleInteraction);
+      }
+      document.removeEventListener("keydown", handleInteraction);
+      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    };
+  }, [updatePlayerState]);
 
 
   useEffect(() => {
@@ -200,64 +224,64 @@ useEffect(() => {
   }, [showSettingsMenu]);
 
   useEffect(() => {
-  const videoElement = videoRef.current;
-  if (!videoElement) return;
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
 
-  const handleLoadingChange = () => {
-    updatePlayerState({ isLoading: videoElement.readyState < 3 });
-  };
+    const handleLoadingChange = () => {
+      updatePlayerState({ isLoading: videoElement.readyState < 3 });
+    };
 
-  const handleProgress = () => {
-    if (!videoElement.duration || !isFinite(videoElement.duration)) return;
+    const handleProgress = () => {
+      if (!videoElement.duration || !isFinite(videoElement.duration)) return;
 
-    const buffer = videoElement.buffered;
-    if (buffer.length > 0) {
-      const bufferedEnd = buffer.end(buffer.length - 1);
-      updatePlayerState({
-        bufferProgress: (bufferedEnd / videoElement.duration) * 100,
-      });
-    }
-  };
-  handleLoadingChange();
+      const buffer = videoElement.buffered;
+      if (buffer.length > 0) {
+        const bufferedEnd = buffer.end(buffer.length - 1);
+        updatePlayerState({
+          bufferProgress: (bufferedEnd / videoElement.duration) * 100,
+        });
+      }
+    };
+    handleLoadingChange();
 
-  videoElement.addEventListener("waiting", () =>
-    updatePlayerState({ isLoading: true })
-  );
-  videoElement.addEventListener("playing", () =>
-    updatePlayerState({ isLoading: false })
-  );
-  videoElement.addEventListener("canplay", handleLoadingChange);
-  videoElement.addEventListener("canplaythrough", handleLoadingChange);
-  videoElement.addEventListener("progress", handleProgress);
-
-  videoElement.addEventListener("stalled", () =>
-    updatePlayerState({ isLoading: true })
-  );
-
-  videoElement.addEventListener("seeking", () =>
-    updatePlayerState({ isLoading: true })
-  );
-  videoElement.addEventListener("seeked", handleLoadingChange);
-
-  return () => {
-    videoElement.removeEventListener("waiting", () =>
+    videoElement.addEventListener("waiting", () =>
       updatePlayerState({ isLoading: true })
     );
-    videoElement.removeEventListener("playing", () =>
+    videoElement.addEventListener("playing", () =>
       updatePlayerState({ isLoading: false })
     );
-    videoElement.removeEventListener("canplay", handleLoadingChange);
-    videoElement.removeEventListener("canplaythrough", handleLoadingChange);
-    videoElement.removeEventListener("progress", handleProgress);
-    videoElement.removeEventListener("stalled", () =>
+    videoElement.addEventListener("canplay", handleLoadingChange);
+    videoElement.addEventListener("canplaythrough", handleLoadingChange);
+    videoElement.addEventListener("progress", handleProgress);
+
+    videoElement.addEventListener("stalled", () =>
       updatePlayerState({ isLoading: true })
     );
-    videoElement.removeEventListener("seeking", () =>
+
+    videoElement.addEventListener("seeking", () =>
       updatePlayerState({ isLoading: true })
     );
-    videoElement.removeEventListener("seeked", handleLoadingChange);
-  };
-}, [updatePlayerState]);
+    videoElement.addEventListener("seeked", handleLoadingChange);
+
+    return () => {
+      videoElement.removeEventListener("waiting", () =>
+        updatePlayerState({ isLoading: true })
+      );
+      videoElement.removeEventListener("playing", () =>
+        updatePlayerState({ isLoading: false })
+      );
+      videoElement.removeEventListener("canplay", handleLoadingChange);
+      videoElement.removeEventListener("canplaythrough", handleLoadingChange);
+      videoElement.removeEventListener("progress", handleProgress);
+      videoElement.removeEventListener("stalled", () =>
+        updatePlayerState({ isLoading: true })
+      );
+      videoElement.removeEventListener("seeking", () =>
+        updatePlayerState({ isLoading: true })
+      );
+      videoElement.removeEventListener("seeked", handleLoadingChange);
+    };
+  }, [updatePlayerState]);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -397,13 +421,13 @@ useEffect(() => {
   };
 
   useEffect(() => {
-  const handleFullscreenChange = () => {
-    updatePlayerState({ isFullscreen: !!document.fullscreenElement });
-  };
-  document.addEventListener("fullscreenchange", handleFullscreenChange);
-  return () =>
-    document.removeEventListener("fullscreenchange", handleFullscreenChange);
-}, [updatePlayerState]);
+    const handleFullscreenChange = () => {
+      updatePlayerState({ isFullscreen: !!document.fullscreenElement });
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, [updatePlayerState]);
 
   const formatTime = (seconds: number) => {
     if (isNaN(seconds) || !isFinite(seconds)) return "0:00";
@@ -498,7 +522,7 @@ useEffect(() => {
           {subtitles && (
             <track
               kind="subtitles"
-              src={subtitles}
+              src={currentSubtitle}
               srcLang="en"
               label="English"
               default
@@ -523,10 +547,9 @@ useEffect(() => {
                   key={tab}
                   onClick={() => setActiveSettingsTab(tab)}
                   className={`px-3 py-2 text-sm font-medium focus:outline-none transition-colors duration-150
-                    ${
-                      activeSettingsTab === tab
-                        ? "border-b-2 border-red-500 text-red-500"
-                        : "text-gray-300 hover:text-white hover:border-b-2 hover:border-gray-500"
+                    ${activeSettingsTab === tab
+                      ? "border-b-2 border-red-500 text-red-500"
+                      : "text-gray-300 hover:text-white hover:border-b-2 hover:border-gray-500"
                     }`}
                 >
                   {tab}
@@ -566,11 +589,10 @@ useEffect(() => {
                         <button
                           key={`speed-${speed}`}
                           onClick={() => handleSpeedChange(speed)}
-                          className={`text-left text-sm px-3 py-1.5 rounded w-full transition-colors ${
-                            playerState.playbackRate === speed
-                              ? "font-semibold bg-red-600 text-white"
-                              : "hover:bg-gray-700 text-gray-200"
-                          }`}
+                          className={`text-left text-sm px-3 py-1.5 rounded w-full transition-colors ${playerState.playbackRate === speed
+                            ? "font-semibold bg-red-600 text-white"
+                            : "hover:bg-gray-700 text-gray-200"
+                            }`}
                         >
                           {speed === 1 ? "Normal" : `${speed}x`}
                         </button>
@@ -590,11 +612,10 @@ useEffect(() => {
                         <button
                           key={mode}
                           onClick={() => setAspectRatioMode(mode)}
-                          className={`text-left text-sm px-3 py-1.5 rounded w-full transition-colors ${
-                            aspectRatioMode === mode
-                              ? "font-semibold bg-red-600 text-white"
-                              : "hover:bg-gray-700 text-gray-200"
-                          }`}
+                          className={`text-left text-sm px-3 py-1.5 rounded w-full transition-colors ${aspectRatioMode === mode
+                            ? "font-semibold bg-red-600 text-white"
+                            : "hover:bg-gray-700 text-gray-200"
+                            }`}
                         >
                           {getAspectRatioLabel(mode)}
                         </button>
@@ -604,8 +625,64 @@ useEffect(() => {
                 </div>
               )}
               {activeSettingsTab === "Subtitles" && (
-                <div>
-                  <p className="text-green-300 text-sm">#TODO</p>
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-gray-400 text-xs mb-2 font-semibold">
+                      Online Subtitles
+                    </div>
+                    <div className="flex gap-2 mb-3">
+                      <input
+                        className="bg-gray-700 text-white px-3 py-1.5 rounded w-full text-xs outline-none focus:ring-1 focus:ring-red-500"
+                        value={subtitleQuery}
+                        onChange={(e) => setSubtitleQuery(e.target.value)}
+                        placeholder="Search movie name..."
+                        onKeyDown={(e) => e.key === 'Enter' && searchSubtitles()}
+                      />
+                      <button
+                        onClick={searchSubtitles}
+                        disabled={searchingSubs}
+                        className="bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded text-white text-xs font-medium disabled:opacity-50"
+                      >
+                        {searchingSubs ? "..." : "Search"}
+                      </button>
+                    </div>
+
+                    <div className="space-y-1 max-h-[150px] overflow-y-auto pr-1">
+                      <button
+                        onClick={() => setCurrentSubtitle(undefined)}
+                        className={`w-full text-left text-xs p-2 rounded transition-colors ${!currentSubtitle ? "bg-red-600/20 text-red-400" : "text-gray-300 hover:bg-gray-700"}`}
+                      >
+                        None (Disable)
+                      </button>
+
+                      {/* Default provided subtitle */}
+                      {subtitles && (
+                        <button
+                          onClick={() => setCurrentSubtitle(subtitles)}
+                          className={`w-full text-left text-xs p-2 rounded transition-colors ${currentSubtitle === subtitles ? "bg-red-600 text-white" : "text-gray-300 hover:bg-gray-700"}`}
+                        >
+                          Default Provided
+                        </button>
+                      )}
+
+                      {subtitleResults.map((sub: any) => (
+                        <button
+                          key={sub.id}
+                          className={`w-full text-left text-xs p-2 rounded truncate transition-colors ${currentSubtitle === sub.url ? "bg-red-600 text-white" : "text-gray-300 hover:bg-gray-700"}`}
+                          onClick={() => setCurrentSubtitle(sub.url)}
+                          title={sub.filename}
+                        >
+                          {sub.filename}
+                        </button>
+                      ))}
+
+                      {subtitleResults.length === 0 && !searchingSubs && subtitleQuery && (
+                        <div className="text-gray-500 text-xs text-center py-2">
+                          No results found
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

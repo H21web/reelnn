@@ -126,6 +126,7 @@ const TopCard: React.FC<MovieDetailsProps> = ({
   vote,
   onPlayClick,
   quality = [],
+  streamUrl,
 }) => {
   const [favorite, setFavorite] = React.useState(isFavorite);
   const [watched, setWatched] = React.useState(isWatched);
@@ -286,9 +287,8 @@ const TopCard: React.FC<MovieDetailsProps> = ({
                       xmlns="http://www.w3.org/2000/svg"
                       viewBox="0 0 20 20"
                       fill="currentColor"
-                      className={`w-4 h-4 ml-2 transition-transform duration-200 text-purple-400 group-hover:text-purple-300 ${
-                        showQualityOptions ? "rotate-180" : ""
-                      }`}
+                      className={`w-4 h-4 ml-2 transition-transform duration-200 text-purple-400 group-hover:text-purple-300 ${showQualityOptions ? "rotate-180" : ""
+                        }`}
                     >
                       <path
                         fillRule="evenodd"
@@ -309,11 +309,10 @@ const TopCard: React.FC<MovieDetailsProps> = ({
                     {quality.map((q, idx) => (
                       <div
                         key={idx}
-                        className={`px-4 py-3 cursor-pointer border-b border-gray-700 last:border-0 transition-colors ${
-                          idx === selectedQuality
-                            ? "bg-purple-600/30 text-white"
-                            : "hover:bg-gray-700 text-gray-200"
-                        }`}
+                        className={`px-4 py-3 cursor-pointer border-b border-gray-700 last:border-0 transition-colors ${idx === selectedQuality
+                          ? "bg-purple-600/30 text-white"
+                          : "hover:bg-gray-700 text-gray-200"
+                          }`}
                         onClick={() => {
                           setSelectedQuality(idx);
                           setShowQualityOptions(false);
@@ -393,6 +392,18 @@ const TopCard: React.FC<MovieDetailsProps> = ({
             >
               <FaRegCalendarAlt className="mr-2" /> Trailer
             </motion.button>
+
+            {/* VLC Player Button */}
+            {streamUrl && (
+              <motion.a
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                href={`vlc://${streamUrl}`}
+                className="bg-orange-600 hover:bg-orange-500 text-white px-4 sm:px-6 py-2 rounded-md flex items-center justify-center"
+              >
+                <FaPlay className="mr-2" /> Play in VLC
+              </motion.a>
+            )}
 
             {/* Icon buttons */}
             <div className="col-span-2 flex justify-center sm:justify-start space-x-3 mt-2 sm:mt-0">
