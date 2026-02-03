@@ -1,6 +1,5 @@
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { BACKEND_URL } from "@/config";
-
-
 
 interface Episode {
   episode_number: number;
@@ -53,15 +52,11 @@ interface ShowData {
   studios: string[];
 }
 
-export default async function handler(request: Request) {
-  const url = new URL(request.url);
-  const sid = url.searchParams.get('sid');
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { sid } = req.query;
 
   if (!sid) {
-    return new Response(JSON.stringify({ error: "Show ID is required" }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(400).json({ error: "Show ID is required" });
   }
 
   try {
@@ -86,26 +81,15 @@ export default async function handler(request: Request) {
     const data: ShowData = await response.json();
     console.log("Fetched show details:", data);
 
-    return new Response(JSON.stringify(data), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 's-maxage=43200'
-      }
-    });
+    res.setHeader('Cache-Control', 's-maxage=43200');
+    return res.status(200).json(data);
   } catch (error) {
     console.error("Error fetching show details:", error);
 
     if (error instanceof TypeError && error.message.includes("abort")) {
-      return new Response(JSON.stringify({ error: "Request timed out" }), {
-        status: 504,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return res.status(504).json({ error: "Request timed out" });
     }
 
-    return new Response(JSON.stringify({ error: "Failed to fetch show details" }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(500).json({ error: "Failed to fetch show details" });
   }
 }

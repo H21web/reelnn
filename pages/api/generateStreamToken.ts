@@ -1,24 +1,18 @@
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { generateStreamToken } from '@/utils/tokenUtils';
 
-
-
-export default async function handler(request: Request) {
-  if (request.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json' }
-    });
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const body = await request.json();
+    // In standard Next.js API routes, body is already parsed if content-type is json
+    const body = req.body;
     const { id, mediaType, qualityIndex, seasonNumber, episodeNumber } = body;
 
     if (!id || !mediaType) {
-      return new Response(JSON.stringify({ error: 'Missing required parameters' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return res.status(400).json({ error: 'Missing required parameters' });
     }
 
     const token = await generateStreamToken({
@@ -29,15 +23,9 @@ export default async function handler(request: Request) {
       episodeNumber
     });
 
-    return new Response(JSON.stringify({ token }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(200).json({ token });
   } catch (error) {
     console.error('Error generating stream token:', error);
-    return new Response(JSON.stringify({ error: 'Failed to generate token' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(500).json({ error: 'Failed to generate token' });
   }
 }

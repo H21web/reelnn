@@ -1,6 +1,5 @@
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { BACKEND_URL } from "@/config";
-
-
 
 interface PaginationData {
   current_page: number;
@@ -24,17 +23,15 @@ interface ApiResponse {
   pagination: PaginationData;
 }
 
-export default async function handler(request: Request) {
-  const url = new URL(request.url);
-  const media_type = url.searchParams.get('media_type');
-  const page = url.searchParams.get('page') || '1';
-  const sort_by = url.searchParams.get('sort_by') || 'new';
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { media_type, page: pageQuery, sort_by: sortByQuery } = req.query;
+
+  const page = Array.isArray(pageQuery) ? pageQuery[0] : pageQuery || '1';
+  const sort_by = Array.isArray(sortByQuery) ? sortByQuery[0] : sortByQuery || 'new';
+
 
   if (!media_type || (media_type !== "movie" && media_type !== "show")) {
-    return new Response(JSON.stringify({ error: 'Invalid media type. Must be "movie" or "show".' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(400).json({ error: 'Invalid media type. Must be "movie" or "show".' });
   }
 
   try {
@@ -47,16 +44,9 @@ export default async function handler(request: Request) {
     }
 
     const data: ApiResponse = await response.json();
-
-    return new Response(JSON.stringify(data), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(200).json(data);
   } catch (error) {
     console.error("Error fetching paginated data:", error);
-    return new Response(JSON.stringify({ error: "Failed to fetch data from API" }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(500).json({ error: "Failed to fetch data from API" });
   }
 }

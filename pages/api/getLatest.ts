@@ -1,16 +1,11 @@
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { BACKEND_URL } from "@/config";
 
-
-
-export default async function handler(request: Request) {
-  const url = new URL(request.url);
-  const media_type = url.searchParams.get('media_type');
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { media_type } = req.query;
 
   if (!media_type || (media_type !== "movie" && media_type !== "show")) {
-    return new Response(JSON.stringify({ error: 'Invalid media type. Use "movie" or "show".' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(400).json({ error: 'Invalid media type. Use "movie" or "show".' });
   }
 
   try {
@@ -23,16 +18,9 @@ export default async function handler(request: Request) {
     }
 
     const data = await response.json();
-
-    return new Response(JSON.stringify(data), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(200).json(data);
   } catch (error) {
     console.error(`Error fetching ${media_type} data:`, error);
-    return new Response(JSON.stringify({ error: `Failed to fetch ${media_type} data` }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(500).json({ error: `Failed to fetch ${media_type} data` });
   }
 }

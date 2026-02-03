@@ -1,26 +1,19 @@
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { BACKEND_URL } from "@/config";
 
-
-
-export default async function handler(request: Request) {
-  if (request.method !== "GET") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json' }
-    });
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-    const url = new URL(request.url);
-    const query = url.searchParams.get('query');
+    const requestQuery = req.query.query;
+
+    // Ensure requestQuery is a string
+    const query = Array.isArray(requestQuery) ? requestQuery[0] : requestQuery;
 
     if (!query || query.length < 3) {
-      return new Response(
-        JSON.stringify({ error: "Query should be at least 3 characters" }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      }
-      );
+      return res.status(400).json({ error: "Query should be at least 3 characters" });
     }
 
     const response = await fetch(
@@ -32,16 +25,9 @@ export default async function handler(request: Request) {
     }
 
     const data = await response.json();
-
-    return new Response(JSON.stringify(data), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(200).json(data);
   } catch (error) {
     console.error("Search API error:", error);
-    return new Response(JSON.stringify({ error: "Failed to fetch search results" }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(500).json({ error: "Failed to fetch search results" });
   }
 }

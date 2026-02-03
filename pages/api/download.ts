@@ -1,24 +1,17 @@
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { NEXT_PUBLIC_TELEGRAM_BOT_NAME, SHORTENER_API_URL, SHORTENER_API_KEY } from '@/config';
 
-
-
-export default async function handler(request: Request) {
-  if (request.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json' }
-    });
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const body = await request.json();
+    const body = req.body;
     const { streamUrl, title, quality, contentId, mediaType, qualityIndex, seasonNumber, episodeNumber } = body;
 
     if (!streamUrl || !contentId) {
-      return new Response(JSON.stringify({ error: 'Required parameters missing' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return res.status(400).json({ error: 'Required parameters missing' });
     }
 
     const mediaTypeCode = mediaType === 'show' ? 's' : 'm';
@@ -43,18 +36,12 @@ export default async function handler(request: Request) {
       }
     }
 
-    return new Response(JSON.stringify({
+    return res.status(200).json({
       directLink,
       telegramLink,
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
     console.error('Download API error:', error);
-    return new Response(JSON.stringify({ error: 'An error occurred processing your request' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(500).json({ error: 'An error occurred processing your request' });
   }
 }

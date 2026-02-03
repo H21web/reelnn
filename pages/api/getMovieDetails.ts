@@ -1,6 +1,5 @@
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { BACKEND_URL } from "@/config";
-
-
 
 interface MovieQuality {
   resolution: string;
@@ -24,15 +23,11 @@ interface MovieData {
   quality: MovieQuality[];
 }
 
-export default async function handler(request: Request) {
-  const url = new URL(request.url);
-  const mid = url.searchParams.get('mid');
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { mid } = req.query;
 
   if (!mid) {
-    return new Response(JSON.stringify({ error: "Movie ID is required" }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(400).json({ error: "Movie ID is required" });
   }
 
   try {
@@ -45,16 +40,9 @@ export default async function handler(request: Request) {
     }
 
     const data: MovieData = await response.json();
-
-    return new Response(JSON.stringify(data), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(200).json(data);
   } catch (error) {
     console.error("Error fetching movie details:", error);
-    return new Response(JSON.stringify({ error: "Failed to fetch movie details" }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(500).json({ error: "Failed to fetch movie details" });
   }
 }

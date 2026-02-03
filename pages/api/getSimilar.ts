@@ -1,6 +1,5 @@
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { BACKEND_URL } from "@/config";
-
-
 
 interface SimilarContent {
   id: string;
@@ -13,23 +12,20 @@ interface SimilarContent {
   media_type: string;
 }
 
-export default async function handler(request: Request) {
-  const url = new URL(request.url);
-  const media_type = url.searchParams.get('media_type');
-  const genres = url.searchParams.getAll('genres');
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { media_type, genres } = req.query;
 
   if (!media_type) {
-    return new Response(JSON.stringify({ error: "Media type is required" }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(400).json({ error: "Media type is required" });
   }
 
   try {
     let apiUrl = `${BACKEND_URL}/api/v1/similar?media_type=${media_type}`;
 
-    if (genres && genres.length > 0) {
-      genres.forEach((genre) => {
+    // Handle specific array structure if passed or ensure it's handled correctly
+    if (genres) {
+      const genreList = Array.isArray(genres) ? genres : [genres];
+      genreList.forEach((genre) => {
         apiUrl += `&genres=${encodeURIComponent(genre)}`;
       });
     }
@@ -41,16 +37,10 @@ export default async function handler(request: Request) {
     }
 
     const data: SimilarContent[] = await response.json();
+    return res.status(200).json(data);
 
-    return new Response(JSON.stringify(data), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
   } catch (error) {
     console.error("Error fetching similar content:", error);
-    return new Response(JSON.stringify({ error: "Failed to fetch similar content" }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(500).json({ error: "Failed to fetch similar content" });
   }
 }

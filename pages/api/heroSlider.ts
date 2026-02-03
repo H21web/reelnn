@@ -1,8 +1,7 @@
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { BACKEND_URL } from "@/config";
 
-
-
-export default async function handler() {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const response = await fetch(`${BACKEND_URL}/api/v1/heroslider`);
 
@@ -11,16 +10,9 @@ export default async function handler() {
     }
 
     const data = await response.json();
-
-    return new Response(JSON.stringify(data), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(200).json(data);
   } catch (error) {
     console.error("Error fetching hero slider data:", error);
-    return new Response(JSON.stringify({ error: "Failed to fetch hero slider data" }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(500).json({ error: "Failed to fetch hero slider data" });
   }
 }
