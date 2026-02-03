@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, forwardRef } from "react";
+import { useState, useEffect, useMemo, forwardRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { debounce } from "lodash";

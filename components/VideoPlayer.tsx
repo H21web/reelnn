@@ -18,7 +18,6 @@ import Image from "next/image";
 export interface QualityOption {
   type: string;
   size?: string;
-  [key: string]: any;
 }
 
 interface VideoPlayerProps {
