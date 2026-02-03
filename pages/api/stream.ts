@@ -49,7 +49,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(apiResponse.status);
 
     if (apiResponse.body) {
-      // @ts-ignore: Readable.fromWeb is available in Node 18+ (which Next 15 requires)
+      // @ts-expect-error: Readable.fromWeb is available in Node 18+ (which Next 15 requires)
       const readable = Readable.fromWeb(apiResponse.body);
       readable.pipe(res);
     } else {

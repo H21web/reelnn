@@ -12,7 +12,7 @@
     "jose": "^6.0.11",
     "lodash": "^4.17.21",
     "motion": "^12.5.0",
-    "next": "^15.2.6",
+    "next": "15.5.11",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-icons": "^5.5.0"
@@ -26,9 +26,8 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "^15.2.6",
+    "eslint-config-next": "15.5.11",
     "tailwindcss": "^4",
     "typescript": "^5"
   },
   "packageManager": "yarn@3.6.3+sha512.d432ab8b22b89cb8b46649ebaf196159b0c1870904224771d75fdf8b55490aaa5de4d9f028deb0425f1513bff7843e97b9d117103795a23b12d2e7c1cedcf50f"
-}
